@@ -193,6 +193,12 @@ exports('AddEntity', function(entity, options)
             if opt.canInteract then
                 safeCanInteract = function(entity, distance, data)
                     local success, result = pcall(function()
+                        -- qb-target may occasionally evaluate global options with an
+                        -- invalid/culled handle; treat that as non-interactable.
+                        if type(entity) ~= 'number' or entity <= 0 or not DoesEntityExist(entity) then
+                            return false
+                        end
+
                         -- Explicitly get coords to avoid table math errors
                         -- Ignoring 'data' argument from qb-target for coords
                         local coords = GetEntityCoords(entity)
@@ -204,7 +210,8 @@ exports('AddEntity', function(entity, options)
                     end)
 
                     if not success then
-                        print("^1[ZLOMA ERROR] Entity Target CanInteract Crash: " .. tostring(result) .. "^0")
+                        local optName = opt.label or opt.name or 'unknown'
+                        print("^1[ZLOMA ERROR] Entity Target CanInteract Crash [" .. tostring(optName) .. "]: " .. tostring(result) .. "^0")
                         return false
                     end
                     return result
@@ -312,12 +319,40 @@ exports('AddBoxZone', function(name, coords, options)
         local qbTargetOptions = {} -- Separate options array for qb-target zone
         for _, opt in ipairs(options.targetOptions or {}) do
             local eventName = RegisterTargetEvent(opt.onSelect or opt.action)
+
+            local safeCanInteract = nil
+            if opt.canInteract then
+                safeCanInteract = function(entity, distance, data)
+                    local ok, result = pcall(function()
+                        local coords = nil
+                        if type(entity) == 'number' and entity > 0 and DoesEntityExist(entity) then
+                            coords = GetEntityCoords(entity)
+                        end
+
+                        local name = ""
+                        if type(data) == 'table' then
+                            name = data.name or data.label or ""
+                        end
+
+                        return opt.canInteract(entity, distance, coords, name)
+                    end)
+
+                    if not ok then
+                        local optName = opt.label or opt.name or 'unknown'
+                        print("^1[ZLOMA ERROR] Zone Target CanInteract Crash [" .. tostring(optName) .. "]: " .. tostring(result) .. "^0")
+                        return false
+                    end
+
+                    return result
+                end
+            end
+
             table.insert(qbTargetOptions, {
                 type = "client",
                 event = eventName,
                 icon = opt.icon or 'fas fa-hand',
                 label = opt.label,
-                canInteract = opt.canInteract
+                canInteract = safeCanInteract
             })
         end
 
@@ -433,12 +468,40 @@ exports('AddSphereZone', function(options)
         if options.options then
             for _, opt in ipairs(options.options) do
                 local eventName = RegisterTargetEvent(opt.onSelect or opt.action) -- Checking both as Wrapper uses 'onSelect' for ox mappings sometimes
+
+                local safeCanInteract = nil
+                if opt.canInteract then
+                    safeCanInteract = function(entity, distance, data)
+                        local ok, result = pcall(function()
+                            local coords = nil
+                            if type(entity) == 'number' and entity > 0 and DoesEntityExist(entity) then
+                                coords = GetEntityCoords(entity)
+                            end
+
+                            local name = ""
+                            if type(data) == 'table' then
+                                name = data.name or data.label or ""
+                            end
+
+                            return opt.canInteract(entity, distance, coords, name)
+                        end)
+
+                        if not ok then
+                            local optName = opt.label or opt.name or 'unknown'
+                            print("^1[ZLOMA ERROR] Zone Target CanInteract Crash [" .. tostring(optName) .. "]: " .. tostring(result) .. "^0")
+                            return false
+                        end
+
+                        return result
+                    end
+                end
+
                 table.insert(convertedOptions, {
                     type = "client",
                     event = eventName,
                     icon = opt.icon or 'fas fa-dot-circle',
                     label = opt.label,
-                    canInteract = opt.canInteract
+                    canInteract = safeCanInteract
                 })
             end
         end
@@ -585,6 +648,12 @@ exports('AddGlobalVehicle', function(options)
             if opt.canInteract then
                 safeCanInteract = function(entity, distance, data)
                     local success, result = pcall(function()
+                        -- qb-target may occasionally evaluate global options with an
+                        -- invalid/culled handle; treat that as non-interactable.
+                        if type(entity) ~= 'number' or entity <= 0 or not DoesEntityExist(entity) then
+                            return false
+                        end
+
                         -- Explicitly get coords to avoid table math errors
                         -- Ignoring 'data' argument from qb-target for coords
                         local coords = GetEntityCoords(entity)
@@ -596,7 +665,8 @@ exports('AddGlobalVehicle', function(options)
                     end)
 
                     if not success then
-                        print("^1[ZLOMA ERROR] Target CanInteract Crash: " .. tostring(result) .. "^0")
+                        local optName = opt.label or opt.name or 'unknown'
+                        print("^1[ZLOMA ERROR] Target CanInteract Crash [" .. tostring(optName) .. "]: " .. tostring(result) .. "^0")
                         return false
                     end
                     return result
