@@ -9,6 +9,7 @@ local TargetType = nil
 -- ============================================================================
 -- Tracks all dynamically registered events for proper cleanup
 local registeredEvents = {}
+local globalVehicleEventNames = {}
 
 -- Cleanup function to remove registered event handlers
 local function CleanupTargetEvent(eventName)
@@ -30,6 +31,21 @@ local function CleanupAllTargetEvents()
     if count > 0 then
         print(string.format("^3[ZLOMA CLEANUP]^0 Removed %d registered target events", count))
     end
+end
+
+local GlobalTargetLabels = {}
+
+local function CleanupGlobalVehicleTargets()
+    if TargetType == 'qb-target' and #GlobalTargetLabels > 0 then
+        exports['qb-target']:RemoveGlobalType(2, GlobalTargetLabels)
+    end
+
+    for _, eventName in ipairs(globalVehicleEventNames) do
+        CleanupTargetEvent(eventName)
+    end
+
+    globalVehicleEventNames = {}
+    GlobalTargetLabels = {}
 end
 
 -- Initialize target detection
@@ -578,12 +594,10 @@ exports('RemoveEntity', function(entity, optionNames)
     return success
 end)
 
--- CLEANUP HANDLER
--- Removes targets and registered events when resource stops to prevent memory leaks
-local GlobalTargetLabels = {}
-
 AddEventHandler('onResourceStop', function(resource)
     if resource ~= GetCurrentResourceName() then return end
+
+    CleanupGlobalVehicleTargets()
 
     -- Cleanup all dynamically registered events (MEMORY LEAK FIX)
     CleanupAllTargetEvents()
@@ -632,14 +646,18 @@ exports('AddGlobalVehicle', function(options)
         success = true
         ZlomaCore.Debug("ox_target: Added global vehicle target")
     elseif TargetType == 'qb-target' then
+        CleanupGlobalVehicleTargets()
+
         -- qb-target global vehicle
         local qbOptions = {}
-        local labelsToRemove = {}
 
         for _, opt in ipairs(options) do
             -- support event, onSelect, or action keys
             local actionOrEvent = opt.event or opt.onSelect or opt.action
             local eventName = RegisterTargetEvent(actionOrEvent)
+            if eventName and type(eventName) == 'string' and eventName:find('^zloma_core:target:') then
+                table.insert(globalVehicleEventNames, eventName)
+            end
 
             -- Wrap canInteract to prevent crashes and adapt arguments
             -- qb-target passes (entity, distance, data)
@@ -676,7 +694,6 @@ exports('AddGlobalVehicle', function(options)
             -- Track label for cleanup
             if opt.label then
                 table.insert(GlobalTargetLabels, opt.label)
-                table.insert(labelsToRemove, opt.label)
             end
 
             table.insert(qbOptions, {
@@ -687,13 +704,6 @@ exports('AddGlobalVehicle', function(options)
                 canInteract = safeCanInteract,
                 bones = opt.bones
             })
-        end
-
-        -- PROACTIVE CLEANUP: Remove these labels before adding them again
-        -- This ensures no stale function references exist
-        if #labelsToRemove > 0 then
-            exports['qb-target']:RemoveGlobalType(2, labelsToRemove)
-            Wait(10) -- Tiny wait to ensure removal processes
         end
 
         if #qbOptions > 0 then
@@ -712,10 +722,15 @@ exports('AddGlobalVehicle', function(options)
             ZlomaCore.Debug("qb-target: No options generated for AddGlobalVehicle")
         end
     elseif TargetType == 'qtarget' then
+        CleanupGlobalVehicleTargets()
+
         -- qtarget global vehicle
         local qtOptions = {}
         for _, opt in ipairs(options) do
             local eventName = RegisterTargetEvent(opt.onSelect or opt.action)
+            if eventName and type(eventName) == 'string' and eventName:find('^zloma_core:target:') then
+                table.insert(globalVehicleEventNames, eventName)
+            end
             table.insert(qtOptions, {
                 type = "client",
                 event = eventName,
