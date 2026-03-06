@@ -942,7 +942,7 @@ exports('GetSocietyMoney', function(jobName)
             return exports['tgg-banking']:GetSocietyAccountMoney(jobName) or 0
         
         elseif SocietyType == 'nfs-banking' then
-            return exports['p_banking']:getAccountMoney(jobName) or 0
+            return exports['nfs-banking']:getAccountMoney(jobName) or 0
         
         elseif SocietyType == 'nfs-billing' then
             return exports['nfs-billing']:getSocietyBalance(jobName) or 0
@@ -1032,7 +1032,7 @@ exports('AddSocietyMoney', function(jobName, amount)
             return exports['tgg-banking']:AddSocietyMoney(jobName, amount)
         
         elseif SocietyType == 'nfs-banking' then
-            return exports['p_banking']:addAccountMoney(jobName, amount)
+            return exports['nfs-banking']:addAccountMoney(jobName, amount)
         
         elseif SocietyType == 'nfs-billing' then
             exports['nfs-billing']:depositSociety(jobName, amount)
@@ -1130,7 +1130,7 @@ exports('RemoveSocietyMoney', function(jobName, amount)
             return exports['tgg-banking']:RemoveSocietyMoney(jobName, amount)
         
         elseif SocietyType == 'nfs-banking' then
-            return exports['p_banking']:removeAccountMoney(jobName, amount)
+            return exports['nfs-banking']:removeAccountMoney(jobName, amount)
         
         elseif SocietyType == 'nfs-billing' then
             exports['nfs-billing']:withdrawSociety(jobName, amount)

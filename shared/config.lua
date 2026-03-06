@@ -62,10 +62,11 @@ function ZlomaCore.DetectFramework()
     -- Auto-detect
     if GetResourceState('es_extended') == 'started' then
         return 'ESX'
+    elseif GetResourceState('qbx_core') == 'started' or GetResourceState('qbx-core') == 'started' then
+        -- Prefer QBox before qb-core because QBox can expose QB compatibility layers.
+        return 'QBox'
     elseif GetResourceState('qb-core') == 'started' then
         return 'QBCore'
-    elseif GetResourceState('qbx_core') == 'started' or GetResourceState('qbx-core') == 'started' then
-        return 'QBox'
     end
     return nil
 end
