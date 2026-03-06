@@ -5,7 +5,7 @@
     Auto-detects and wraps all popular fuel systems CLIENT-SIDE.
     
     Supported:
-    lc_fuel, ox_fuel, LegacyFuel, lj-fuel, ps-fuel, cdn-fuel, Renewed-Fuel, okokGasStation,
+    lc_fuel, qb-fuel, ox_fuel, LegacyFuel, lj-fuel, ps-fuel, cdn-fuel, Renewed-Fuel, okokGasStation,
     qs-fuelstations, rcore_fuel, x-fuel, stg-fuel, ti_fuel, esx-sna-fuel, ND_Fuel, myFuel
 ]]
 
@@ -51,6 +51,8 @@ function GetVehicleFuel(vehicle)
         local success, result = pcall(function()
             if activeFuelSystem == 'lc_fuel' then
                 return exports['lc_fuel']:GetFuel(vehicle)
+            elseif activeFuelSystem == 'qb-fuel' then
+                return exports['qb-fuel']:GetFuel(vehicle)
             elseif activeFuelSystem == 'ox_fuel' then
                 return Entity(vehicle).state.fuel or GetVehicleFuelLevel(vehicle)
             elseif activeFuelSystem == 'LegacyFuel' then
@@ -111,6 +113,8 @@ function SetVehicleFuel(vehicle, fuelLevel)
         pcall(function()
             if activeFuelSystem == 'lc_fuel' then
                 exports['lc_fuel']:SetFuel(vehicle, fuelLevel)
+            elseif activeFuelSystem == 'qb-fuel' then
+                exports['qb-fuel']:SetFuel(vehicle, fuelLevel)
             elseif activeFuelSystem == 'ox_fuel' then
                 Entity(vehicle).state.fuel = fuelLevel
                 SetVehicleFuelLevel(vehicle, fuelLevel + 0.0)

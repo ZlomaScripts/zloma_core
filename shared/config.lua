@@ -42,7 +42,7 @@ ZlomaCore.Config.Manual = {
     Notification = 'auto', -- 'auto', 'ox_lib', 'mythic', 't-notify', 'okok', 'esx_notify', 'QBCore', 'ESX', 'wasabi_notify', 'fl-notify', 'brutal_notify', 'is_ui', 'lation_ui', 'g-notifications', 'vms_notifyv2', 'wasabi_uikit'
     Keys = 'auto',         -- 'auto', 'zloma_keys', 'qb-vehiclekeys', 'wasabi_carlock', 'cd_garage', 'jaksam', 'Renewed-Vehiclekeys', 'MrNewbVehicleKeys', 'qbx_vehiclekeys', 'qs-vehiclekeys', 'tgiann-hotwire', 'ak47_vehiclekeys', 'ak47_qb_vehiclekeys', 'mk_vehiclekeys', 'filo_vehiclekey', 'is_carkeys', 'LifeSaver_KeySystem', 'brutal_carkeys', 'ic3d_vehiclekeys', 'mm_carkeys', 'rd_vehiclekeys', 'p_carkeys'
     Target = 'auto',       -- 'auto', 'ox_target', 'qb-target', 'qtarget'
-    Fuel = 'auto',         -- 'auto', 'lc_fuel', 'LegacyFuel', 'ox_fuel', 'lj-fuel', 'ps-fuel', 'cdn-fuel', 'Renewed-Fuel', 'okokGasStation', 'qs-fuelstations', 'rcore_fuel', 'x-fuel', 'stg-fuel', 'ti_fuel', 'esx-sna-fuel', 'ND_Fuel', 'myFuel'
+    Fuel = 'auto',         -- 'auto', 'lc_fuel', 'qb-fuel', 'LegacyFuel', 'ox_fuel', 'lj-fuel', 'ps-fuel', 'cdn-fuel', 'Renewed-Fuel', 'okokGasStation', 'qs-fuelstations', 'rcore_fuel', 'x-fuel', 'stg-fuel', 'ti_fuel', 'esx-sna-fuel', 'ND_Fuel', 'myFuel'
     Society = 'auto'       -- 'auto', 'esx_addonaccount', 'qb-banking', 'okokBanking', 'wasabi_banking', 'qs-banking', 'Renewed-Banking', 'RxBanking', 'nfs-billing', 'crm-banking', 'kartik-banking', 'snipe-banking', 'tgg-banking', 'fd_banking', 'vms_bossmenu', 'xnr-bossmenu', 'nass_bossmenu', 'sd-multijob', 'p_banking'
 }
 
@@ -312,6 +312,8 @@ function ZlomaCore.DetectFuel()
     -- Auto-detect (priority order)
     if GetResourceState('lc_fuel') == 'started' then
         return 'lc_fuel'
+    elseif GetResourceState('qb-fuel') == 'started' then
+        return 'qb-fuel'
     elseif GetResourceState('LegacyFuel') == 'started' then
         return 'LegacyFuel'
     elseif GetResourceState('ox_fuel') == 'started' then

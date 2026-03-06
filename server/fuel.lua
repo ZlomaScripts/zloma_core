@@ -8,7 +8,7 @@
     Server-side is used as a backup/sync mechanism only.
     
     Supported:
-    lc_fuel, ox_fuel, LegacyFuel, lj-fuel, ps-fuel, cdn-fuel, Renewed-Fuel, okokGasStation,
+    lc_fuel, qb-fuel, ox_fuel, LegacyFuel, lj-fuel, ps-fuel, cdn-fuel, Renewed-Fuel, okokGasStation,
     qs-fuelstations, rcore_fuel, x-fuel, stg-fuel, ti_fuel, esx-sna-fuel, ND_Fuel, myFuel
 ]]
 
@@ -62,6 +62,9 @@ function SetVehicleFuel(vehicle, fuelLevel)
         local success = pcall(function()
             -- State bag-based fuel systems (server-authoritative)
             if activeFuelSystem == 'lc_fuel' then
+                Entity(entity).state.fuel = fuelLevel
+            elseif activeFuelSystem == 'qb-fuel' then
+                -- qb-fuel exports are client-side; keep server sync authoritative via state bag.
                 Entity(entity).state.fuel = fuelLevel
             elseif activeFuelSystem == 'ox_fuel' then
                 Entity(entity).state.fuel = fuelLevel
@@ -125,6 +128,8 @@ function GetVehicleFuel(vehicle)
         local success, result = pcall(function()
             -- State bag-based systems
             if activeFuelSystem == 'lc_fuel' then
+                return Entity(entity).state.fuel or 100
+            elseif activeFuelSystem == 'qb-fuel' then
                 return Entity(entity).state.fuel or 100
             elseif activeFuelSystem == 'ox_fuel' then
                 return Entity(entity).state.fuel or 100
