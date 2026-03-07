@@ -13,6 +13,7 @@ ZlomaCore.Cache = {
     Notification = nil,
     Appearance = nil,
     Keys = nil,
+    Dispatch = nil,
     Target = nil,
     Fuel = nil,
     Society = nil  -- Society/Banking system cache
@@ -52,6 +53,7 @@ ZlomaCore.Config.Manual = {
     Notification = 'auto', -- 'auto', 'ox_lib', 'mythic', 't-notify', 'okok', 'esx_notify', 'QBCore', 'ESX', 'wasabi_notify', 'fl-notify', 'brutal_notify', 'is_ui', 'lation_ui', 'g-notifications', 'vms_notifyv2', 'wasabi_uikit'
     Appearance = 'auto',   -- 'auto', 'illenium-appearance', 'qs-appearance', 'crm-appearance', 'qb-clothing', 'rcore_clothing', 'tgiann-clothing', 'p_appearance', 'esx_skin'
     Keys = 'auto',         -- 'auto', 'zloma_keys', 'qb-vehiclekeys', 'wasabi_carlock', 'cd_garage', 'jaksam', 'Renewed-Vehiclekeys', 'MrNewbVehicleKeys', 'qbx_vehiclekeys', 'qs-vehiclekeys', 'tgiann-hotwire', 'ak47_vehiclekeys', 'ak47_qb_vehiclekeys', 'mk_vehiclekeys', 'filo_vehiclekey', 'is_carkeys', 'LifeSaver_KeySystem', 'brutal_carkeys', 'ic3d_vehiclekeys', 'mm_carkeys', 'rd_vehiclekeys', 'p_carkeys'
+    Dispatch = 'auto',     -- 'auto', 'ps-dispatch', 'piotreq_gpt', 'cd_dispatch', 'cd_dispatch3d', 'qs-dispatch', 'tk_dispatch', 'rcore_dispatch', 'lb-tablet', 'kartik-mdt', 'origen_police', 'none'
     Target = 'auto',       -- 'auto', 'ox_target', 'qb-target', 'qtarget'
     Fuel = 'auto',         -- 'auto', 'lc_fuel', 'qb-fuel', 'LegacyFuel', 'ox_fuel', 'lj-fuel', 'ps-fuel', 'cdn-fuel', 'Renewed-Fuel', 'okokGasStation', 'qs-fuelstations', 'rcore_fuel', 'x-fuel', 'stg-fuel', 'ti_fuel', 'esx-sna-fuel', 'ND_Fuel', 'myFuel'
     Society = 'auto'       -- 'auto', 'esx_addonaccount', 'qb-banking', 'okokBanking', 'wasabi_banking', 'qs-banking', 'Renewed-Banking', 'RxBanking', 'nfs-billing', 'crm-banking', 'kartik-banking', 'snipe-banking', 'tgg-banking', 'fd_banking', 'vms_bossmenu', 'xnr-bossmenu', 'nass_bossmenu', 'sd-multijob', 'p_banking'
@@ -299,6 +301,43 @@ function ZlomaCore.DetectKeys()
     return nil
 end
 
+function ZlomaCore.DetectDispatch()
+    local manual = ZlomaCore.Config.Manual.Dispatch
+
+    if manual == 'none' then
+        return nil
+    end
+
+    if manual and manual ~= 'auto' then
+        ZlomaCore.Debug(string.format("Using manual dispatch: %s", manual))
+        return manual
+    end
+
+    if GetResourceState('ps-dispatch') == 'started' then
+        return 'ps-dispatch'
+    elseif GetResourceState('piotreq_gpt') == 'started' then
+        return 'piotreq_gpt'
+    elseif GetResourceState('cd_dispatch') == 'started' then
+        return 'cd_dispatch'
+    elseif GetResourceState('cd_dispatch3d') == 'started' then
+        return 'cd_dispatch3d'
+    elseif GetResourceState('qs-dispatch') == 'started' then
+        return 'qs-dispatch'
+    elseif GetResourceState('tk_dispatch') == 'started' then
+        return 'tk_dispatch'
+    elseif GetResourceState('rcore_dispatch') == 'started' then
+        return 'rcore_dispatch'
+    elseif GetResourceState('lb-tablet') == 'started' then
+        return 'lb-tablet'
+    elseif GetResourceState('kartik-mdt') == 'started' then
+        return 'kartik-mdt'
+    elseif GetResourceState('origen_police') == 'started' then
+        return 'origen_police'
+    end
+
+    return nil
+end
+
 function ZlomaCore.DetectTarget()
     local manual = ZlomaCore.Config.Manual.Target
 
@@ -452,6 +491,7 @@ function ZlomaCore.Initialize()
     ZlomaCore.Cache.Notification = ZlomaCore.DetectNotification()
     ZlomaCore.Cache.Appearance = ZlomaCore.DetectAppearance()
     ZlomaCore.Cache.Keys = ZlomaCore.DetectKeys()
+    ZlomaCore.Cache.Dispatch = ZlomaCore.DetectDispatch()
     ZlomaCore.Cache.Target = ZlomaCore.DetectTarget()
     ZlomaCore.Cache.Fuel = ZlomaCore.DetectFuel()
     ZlomaCore.Cache.Society = ZlomaCore.DetectSociety()
@@ -466,6 +506,7 @@ function ZlomaCore.Initialize()
     print(string.format("^3Notification:^0 %s", ZlomaCore.Cache.Notification or "^1NONE DETECTED^0"))
     print(string.format("^3Appearance:^0 %s", ZlomaCore.Cache.Appearance or "^1NONE DETECTED^0"))
     print(string.format("^3Keys:^0 %s", ZlomaCore.Cache.Keys or "^1NONE DETECTED^0"))
+    print(string.format("^3Dispatch:^0 %s", ZlomaCore.Cache.Dispatch or "^1NONE DETECTED^0"))
     print(string.format("^3Target:^0 %s", ZlomaCore.Cache.Target or "^1NONE DETECTED^0"))
     print(string.format("^3Fuel:^0 %s", ZlomaCore.Cache.Fuel or "^1NONE DETECTED^0"))
     print(string.format("^3Society:^0 %s", ZlomaCore.Cache.Society or "^1NONE DETECTED^0"))

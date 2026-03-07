@@ -23,6 +23,7 @@ server_scripts {
     'server/inventory.lua',
     'server/billing.lua',
     'server/callbacks.lua',
+    'server/dispatch.lua',
     'server/fuel.lua'
 }
 
@@ -107,6 +108,8 @@ server_exports {
     'CreateUseableItem',
     'GetOfflinePlayerJob',
     'SetOfflinePlayerJob',
+    'GetDispatchSystem',
+    'SendDispatchAlert',
     -- fuel.lua
     'SetVehicleFuel',
     'GetVehicleFuel',

@@ -24,6 +24,7 @@ Unified interface for ESX, QBCore, and QBox with automatic detection and gracefu
 | Notification | 15 | ox_lib, wasabi_notify, fl-notify, brutal_notify, mythic_notify, t-notify, okokNotify... |
 | Appearance | 8 | illenium-appearance, qs-appearance, crm-appearance, qb-clothing, rcore_clothing... |
 | Keys | 21 | Renewed-Vehiclekeys, qb-vehiclekeys, wasabi_carlock, qbx_vehiclekeys, MrNewbVehicleKeys... |
+| Dispatch | 10 | ps-dispatch, piotreq_gpt, cd_dispatch, qs-dispatch, tk_dispatch... |
 | Fuel | 16 | lc_fuel, LegacyFuel, ox_fuel, Renewed-Fuel, cdn-fuel, ps-fuel... |
 | Society/Banking | 18 | esx_addonaccount, qb-banking, okokBanking, Renewed-Banking, wasabi_banking... |
 | Billing | 4 | okokBilling, okok_billing, esx_billing, qb-billing |
@@ -62,6 +63,7 @@ Framework: QBCore
 Inventory: ox_inventory
 Notification: ox_lib
 Keys: Renewed-Vehiclekeys
+Dispatch: ps-dispatch
 Target: ox_target
 Fuel: lc_fuel
 Society: qb-banking
