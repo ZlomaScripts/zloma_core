@@ -11,7 +11,7 @@ Unified interface for ESX, QBCore, and QBox with automatic detection and gracefu
 ## Features
 
 - **Framework Agnostic** — ESX, QBCore, QBox (including full QBox export-based API)
-- **90+ Supported Systems** — Auto-detected at runtime, zero config needed
+- **100+ Supported Systems** — Auto-detected at runtime, zero config needed
 - **Graceful Fallbacks** — Missing optional systems trigger warnings, never crashes
 - **Open Source** — Easy to extend with new system support
 
@@ -22,6 +22,7 @@ Unified interface for ESX, QBCore, and QBox with automatic detection and gracefu
 | Framework | 3 | ESX, QBCore, QBox |
 | Inventory | 12 | ox_inventory, qb-inventory, qs-inventory, ps-inventory, tgiann-inventory, origen-inventory... |
 | Notification | 15 | ox_lib, wasabi_notify, fl-notify, brutal_notify, mythic_notify, t-notify, okokNotify... |
+| Appearance | 8 | illenium-appearance, qs-appearance, crm-appearance, qb-clothing, rcore_clothing... |
 | Keys | 21 | Renewed-Vehiclekeys, qb-vehiclekeys, wasabi_carlock, qbx_vehiclekeys, MrNewbVehicleKeys... |
 | Fuel | 16 | lc_fuel, LegacyFuel, ox_fuel, Renewed-Fuel, cdn-fuel, ps-fuel... |
 | Society/Banking | 18 | esx_addonaccount, qb-banking, okokBanking, Renewed-Banking, wasabi_banking... |
@@ -104,6 +105,10 @@ local Core = exports['zloma_core']
 Core:Notify('Engine repaired!', 'success', 5000)
 Core:NotifyAdvanced('Garage', 'Vehicle stored', 'info', 5000)
 
+-- Appearance / wardrobe
+local appearanceSystem = Core:GetAppearanceSystem()
+Core:OpenWardrobe({ title = 'Wardrobe' })
+
 -- Vehicle keys
 Core:GiveKeys(plate)
 Core:RemoveKeys(plate)
@@ -184,6 +189,11 @@ Full API documentation available at [zloma-scripts.gitbook.io](https://zloma-scr
 |--------|------------|
 | `Notify(msg, type, duration)` | Show notification |
 | `NotifyAdvanced(title, msg, type, duration)` | Show titled notification |
+| `GetAppearanceSystem()` | Get detected appearance system |
+| `GetCurrentSkin()` | Fetch current skin when supported |
+| `SetPlayerSkin(data)` | Apply a full skin payload |
+| `SetPlayerClothing(data)` | Apply clothing-only payload |
+| `OpenWardrobe(options)` | Open the saved outfits / wardrobe UI |
 | `GiveKeys(plate)` | Give vehicle keys |
 | `RemoveKeys(plate)` | Remove vehicle keys |
 | `HasKeys(plate)` | Check if has keys |
@@ -192,6 +202,7 @@ Full API documentation available at [zloma-scripts.gitbook.io](https://zloma-scr
 | `AddSphereZone(options)` | Add sphere target zone |
 | `AddGlobalVehicle(options)` | Add global vehicle target |
 | `RemoveZone(name)` | Remove target zone |
+| `SetTargetingEnabled(enabled)` | Toggle targeting when supported |
 | `GetVehicleFuel(vehicle)` | Get fuel level |
 | `SetVehicleFuel(vehicle, level)` | Set fuel level |
 

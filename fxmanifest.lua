@@ -28,6 +28,7 @@ server_scripts {
 
 client_scripts {
     'client/init.lua',      -- Initialize detection FIRST
+    'client/appearance.lua',
     'client/inventory.lua', -- Added generic client inventory wrapper
     'client/notifications.lua',
     'client/keys.lua',
@@ -44,6 +45,11 @@ exports {
     'IsAdmin',
     'GetPlayerJob',
     'GetPlayerGang',
+    'GetAppearanceSystem',
+    'GetCurrentSkin',
+    'SetPlayerSkin',
+    'SetPlayerClothing',
+    'OpenWardrobe',
     -- inventory.lua
     'GetInventory',
     'HasItem',
@@ -62,6 +68,7 @@ exports {
     'RemoveEntity',
     'AddGlobalVehicle',
     'RemoveZone',
+    'SetTargetingEnabled',
     -- fuel.lua
     'GetVehicleFuel',
     'SetVehicleFuel',

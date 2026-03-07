@@ -6,6 +6,42 @@
 local Framework = nil
 local FrameworkType = nil
 
+local function RecoverDependentResources()
+    local recovery = ZlomaCore.Config.DependencyRecovery
+    if not recovery or not recovery.Enabled then return end
+
+    CreateThread(function()
+        Wait(recovery.RetryDelay or 1000)
+
+        for _, resourceName in ipairs(recovery.RestartResources or {}) do
+            local started = false
+
+            for attempt = 1, (recovery.RetryCount or 5) do
+                local state = GetResourceState(resourceName)
+
+                if state == 'started' then
+                    started = true
+                    break
+                end
+
+                if state == 'stopped' then
+                    local ok = StartResource(resourceName)
+                    ZlomaCore.Debug(string.format('Dependency recovery start %s attempt %s: %s', resourceName, attempt, tostring(ok)))
+                end
+
+                Wait(recovery.RetryDelay or 1000)
+            end
+
+            if started then
+                print(string.format('^2[ZLOMA CORE]^0 Dependency recovery ensured %s is running.', resourceName))
+            else
+                local state = GetResourceState(resourceName)
+                print(string.format('^3[ZLOMA WARNING]^0 Dependency recovery could not start %s (state: %s).', resourceName, state))
+            end
+        end
+    end)
+end
+
 exports('GetFrameworkType', function()
     return FrameworkType
 end)
@@ -140,6 +176,14 @@ CreateThread(function()
     else
         print("^1[ZLOMA ERROR]^0 No framework detected! Please install ESX, QBCore, or QBox.")
     end
+
+    RecoverDependentResources()
+end)
+
+AddEventHandler('onResourceStart', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+
+    RecoverDependentResources()
 end)
 
 -- EXPORT: GetPlayer(source) - Returns unified player object

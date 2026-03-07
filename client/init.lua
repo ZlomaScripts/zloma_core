@@ -7,6 +7,7 @@ CreateThread(function()
     
     -- Run client-side detection
     ZlomaCore.Cache.Notification = ZlomaCore.DetectNotification()
+    ZlomaCore.Cache.Appearance = ZlomaCore.DetectAppearance()
     ZlomaCore.Cache.Keys = ZlomaCore.DetectKeys()
     ZlomaCore.Cache.Target = ZlomaCore.DetectTarget()
     ZlomaCore.Cache.Fuel = ZlomaCore.DetectFuel()
@@ -16,10 +17,35 @@ CreateThread(function()
     print("^2ZLOMA CORE - Client Detection^0")
     print("^2========================================^0")
     print(string.format("^3Notification:^0 %s", ZlomaCore.Cache.Notification or "^1NONE DETECTED^0"))
+    print(string.format("^3Appearance:^0 %s", ZlomaCore.Cache.Appearance or "^1NONE DETECTED^0"))
     print(string.format("^3Keys:^0 %s", ZlomaCore.Cache.Keys or "^1NONE DETECTED^0"))
     print(string.format("^3Target:^0 %s", ZlomaCore.Cache.Target or "^1NONE DETECTED^0"))
     print(string.format("^3Fuel:^0 %s", ZlomaCore.Cache.Fuel or "^1NONE DETECTED^0"))
     print("^2========================================^0")
+end)
+
+local function RefreshClientDetection(changedResource)
+    local previousKeys = ZlomaCore.Cache.Keys
+
+    ZlomaCore.Cache.Notification = ZlomaCore.DetectNotification()
+    ZlomaCore.Cache.Appearance = ZlomaCore.DetectAppearance()
+    ZlomaCore.Cache.Keys = ZlomaCore.DetectKeys()
+    ZlomaCore.Cache.Target = ZlomaCore.DetectTarget()
+    ZlomaCore.Cache.Fuel = ZlomaCore.DetectFuel()
+
+    if previousKeys ~= ZlomaCore.Cache.Keys then
+        print(string.format('^2[ZLOMA CORE]^0 Keys detection refreshed after %s: %s', changedResource or 'resource change', ZlomaCore.Cache.Keys or '^1NONE DETECTED^0'))
+    end
+end
+
+AddEventHandler('onClientResourceStart', function(resourceName)
+    if resourceName == GetCurrentResourceName() then return end
+    RefreshClientDetection(resourceName)
+end)
+
+AddEventHandler('onClientResourceStop', function(resourceName)
+    if resourceName == GetCurrentResourceName() then return end
+    RefreshClientDetection(resourceName)
 end)
 
 -- EXPORT: IsAdmin(groups) - Check if local player is admin (client-side)

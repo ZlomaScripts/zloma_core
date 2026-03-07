@@ -4,16 +4,42 @@
 
 local KeysType = nil
 
+local function RefreshKeysDetection(reason)
+    ZlomaCore.Cache.Keys = ZlomaCore.DetectKeys()
+    KeysType = ZlomaCore.Cache.Keys
+
+    if KeysType then
+        ZlomaCore.Debug(string.format('Keys system loaded%s: %s', reason and (' (' .. reason .. ')') or '', KeysType))
+    else
+        print('^3[ZLOMA WARNING]^0 No keys system detected. Key functions will not work.')
+    end
+
+    return KeysType
+end
+
+local function EnsureKeysType(action)
+    if KeysType and GetResourceState(KeysType) == 'started' then
+        return true
+    end
+
+    RefreshKeysDetection(action)
+    return KeysType ~= nil
+end
+
 -- Initialize keys detection
 CreateThread(function()
     Wait(ZlomaCore.Config.Timeouts.DetectionWait or 200) -- Wait for init.lua to finish detection
-    KeysType = ZlomaCore.Cache.Keys
-    
-    if KeysType then
-        ZlomaCore.Debug(string.format("Keys system loaded: %s", KeysType))
-    else
-        print("^3[ZLOMA WARNING]^0 No keys system detected. Key functions will not work.")
-    end
+    RefreshKeysDetection('initial load')
+end)
+
+AddEventHandler('onClientResourceStart', function(resourceName)
+    if resourceName == GetCurrentResourceName() then return end
+    RefreshKeysDetection('resource start: ' .. resourceName)
+end)
+
+AddEventHandler('onClientResourceStop', function(resourceName)
+    if resourceName == GetCurrentResourceName() then return end
+    RefreshKeysDetection('resource stop: ' .. resourceName)
 end)
 
 -- ============================================================================
@@ -40,7 +66,7 @@ exports('GiveKeys', function(plate, vehicleEntity)
         return false
     end
 
-    if not KeysType then
+    if not EnsureKeysType('GiveKeys') then
         ZlomaCore.Warn("Keys", "GiveKeys")
         return false
     end
@@ -228,7 +254,7 @@ exports('RemoveKeys', function(plate)
         return false
     end
 
-    if not KeysType then
+    if not EnsureKeysType('RemoveKeys') then
         ZlomaCore.Warn("Keys", "RemoveKeys")
         return false
     end
@@ -399,7 +425,7 @@ exports('HasKeys', function(plate)
         return false
     end
 
-    if not KeysType then
+    if not EnsureKeysType('HasKeys') then
         ZlomaCore.Warn("Keys", "HasKeys")
         return false
     end

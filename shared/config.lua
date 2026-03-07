@@ -11,6 +11,7 @@ ZlomaCore.Cache = {
     Inventory = nil,
     Billing = nil,
     Notification = nil,
+    Appearance = nil,
     Keys = nil,
     Target = nil,
     Fuel = nil,
@@ -31,6 +32,15 @@ ZlomaCore.Config.Timeouts = {
     PollingInterval = 50      -- Polling interval for callbacks (ms)
 }
 
+ZlomaCore.Config.DependencyRecovery = {
+    Enabled = true,
+    RetryDelay = 1000,
+    RetryCount = 5,
+    RestartResources = {
+        'zloma_keys'
+    }
+}
+
 -- ======================================================
 -- MANUAL CONFIGURATION (Advanced Users)
 -- Set to 'auto' for automatic detection, or specify exact system name
@@ -40,6 +50,7 @@ ZlomaCore.Config.Manual = {
     Inventory = 'auto',    -- 'auto', 'ox_inventory', 'qb-inventory', 'qs-inventory', 'ps-inventory', 'codem-inventory', 'tgiann-inventory', 'origen-inventory', 'core_inventory', 'ak47_inventory', 'jaksam_inventory', 'jpr-inventory', 'S-Inventory'
     Billing = 'auto',      -- 'auto', 'okokBilling', 'okok_billing', 'esx_billing', 'qb-billing'
     Notification = 'auto', -- 'auto', 'ox_lib', 'mythic', 't-notify', 'okok', 'esx_notify', 'QBCore', 'ESX', 'wasabi_notify', 'fl-notify', 'brutal_notify', 'is_ui', 'lation_ui', 'g-notifications', 'vms_notifyv2', 'wasabi_uikit'
+    Appearance = 'auto',   -- 'auto', 'illenium-appearance', 'qs-appearance', 'crm-appearance', 'qb-clothing', 'rcore_clothing', 'tgiann-clothing', 'p_appearance', 'esx_skin'
     Keys = 'auto',         -- 'auto', 'zloma_keys', 'qb-vehiclekeys', 'wasabi_carlock', 'cd_garage', 'jaksam', 'Renewed-Vehiclekeys', 'MrNewbVehicleKeys', 'qbx_vehiclekeys', 'qs-vehiclekeys', 'tgiann-hotwire', 'ak47_vehiclekeys', 'ak47_qb_vehiclekeys', 'mk_vehiclekeys', 'filo_vehiclekey', 'is_carkeys', 'LifeSaver_KeySystem', 'brutal_carkeys', 'ic3d_vehiclekeys', 'mm_carkeys', 'rd_vehiclekeys', 'p_carkeys'
     Target = 'auto',       -- 'auto', 'ox_target', 'qb-target', 'qtarget'
     Fuel = 'auto',         -- 'auto', 'lc_fuel', 'qb-fuel', 'LegacyFuel', 'ox_fuel', 'lj-fuel', 'ps-fuel', 'cdn-fuel', 'Renewed-Fuel', 'okokGasStation', 'qs-fuelstations', 'rcore_fuel', 'x-fuel', 'stg-fuel', 'ti_fuel', 'esx-sna-fuel', 'ND_Fuel', 'myFuel'
@@ -191,6 +202,35 @@ function ZlomaCore.DetectNotification()
     elseif GetResourceState('es_extended') == 'started' then
         return 'ESX'
     end
+    return nil
+end
+
+function ZlomaCore.DetectAppearance()
+    local manual = ZlomaCore.Config.Manual.Appearance
+
+    if manual and manual ~= 'auto' then
+        ZlomaCore.Debug(string.format("Using manual appearance: %s", manual))
+        return manual
+    end
+
+    if GetResourceState('illenium-appearance') == 'started' then
+        return 'illenium-appearance'
+    elseif GetResourceState('qs-appearance') == 'started' then
+        return 'qs-appearance'
+    elseif GetResourceState('crm-appearance') == 'started' then
+        return 'crm-appearance'
+    elseif GetResourceState('qb-clothing') == 'started' then
+        return 'qb-clothing'
+    elseif GetResourceState('rcore_clothing') == 'started' then
+        return 'rcore_clothing'
+    elseif GetResourceState('tgiann-clothing') == 'started' then
+        return 'tgiann-clothing'
+    elseif GetResourceState('p_appearance') == 'started' then
+        return 'p_appearance'
+    elseif GetResourceState('esx_skin') == 'started' then
+        return 'esx_skin'
+    end
+
     return nil
 end
 
@@ -410,6 +450,7 @@ function ZlomaCore.Initialize()
     ZlomaCore.Cache.Inventory = ZlomaCore.DetectInventory()
     ZlomaCore.Cache.Billing = ZlomaCore.DetectBilling()
     ZlomaCore.Cache.Notification = ZlomaCore.DetectNotification()
+    ZlomaCore.Cache.Appearance = ZlomaCore.DetectAppearance()
     ZlomaCore.Cache.Keys = ZlomaCore.DetectKeys()
     ZlomaCore.Cache.Target = ZlomaCore.DetectTarget()
     ZlomaCore.Cache.Fuel = ZlomaCore.DetectFuel()
@@ -423,6 +464,7 @@ function ZlomaCore.Initialize()
     print(string.format("^3Inventory:^0 %s", ZlomaCore.Cache.Inventory or "^1NONE DETECTED^0"))
     print(string.format("^3Billing:^0 %s", ZlomaCore.Cache.Billing or "^1NONE DETECTED^0"))
     print(string.format("^3Notification:^0 %s", ZlomaCore.Cache.Notification or "^1NONE DETECTED^0"))
+    print(string.format("^3Appearance:^0 %s", ZlomaCore.Cache.Appearance or "^1NONE DETECTED^0"))
     print(string.format("^3Keys:^0 %s", ZlomaCore.Cache.Keys or "^1NONE DETECTED^0"))
     print(string.format("^3Target:^0 %s", ZlomaCore.Cache.Target or "^1NONE DETECTED^0"))
     print(string.format("^3Fuel:^0 %s", ZlomaCore.Cache.Fuel or "^1NONE DETECTED^0"))

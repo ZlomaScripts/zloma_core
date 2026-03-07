@@ -75,6 +75,20 @@ exports('GetTargetSystem', function()
     return TargetType
 end)
 
+exports('SetTargetingEnabled', function(enabled)
+    if not TargetType then
+        ZlomaCore.Warn('Target', 'SetTargetingEnabled')
+        return false
+    end
+
+    if TargetType == 'ox_target' and exports.ox_target then
+        exports.ox_target:disableTargeting(not enabled)
+        return true
+    end
+
+    return true
+end)
+
 -- EXPORT: AddEntity(entity, options) - Add target options to entity
 -- entity: Entity handle or array of entities
 -- options: Table of target options (standardized format)
