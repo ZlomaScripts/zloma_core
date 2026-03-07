@@ -212,9 +212,11 @@ exports('RemoveMoney', function(source, amount, account)
         return true
     elseif FrameworkType == 'QBCore' or FrameworkType == 'QBox' then
         local accountName = account == 'cash' and 'cash' or account
-        player.Functions.RemoveMoney(accountName, amount)
-        ZlomaCore.Debug(string.format("Removed $%s from %s account (Player %s)", amount, accountName, source))
-        return true
+        local removed = player.Functions.RemoveMoney(accountName, amount)
+        if removed then
+            ZlomaCore.Debug(string.format("Removed $%s from %s account (Player %s)", amount, accountName, source))
+        end
+        return removed == true
     end
 
     return false
@@ -240,9 +242,11 @@ exports('AddMoney', function(source, amount, account)
         return true
     elseif FrameworkType == 'QBCore' or FrameworkType == 'QBox' then
         local accountName = account == 'cash' and 'cash' or account
-        player.Functions.AddMoney(accountName, amount)
-        ZlomaCore.Debug(string.format("Added $%s to %s account (Player %s)", amount, accountName, source))
-        return true
+        local added = player.Functions.AddMoney(accountName, amount)
+        if added then
+            ZlomaCore.Debug(string.format("Added $%s to %s account (Player %s)", amount, accountName, source))
+        end
+        return added == true
     end
 
     return false
