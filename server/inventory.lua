@@ -141,6 +141,22 @@ local function SupportsStashSystem(inventorySystem)
     return supportedSystems[inventorySystem] == true
 end
 
+local function SupportsStashItemRead(inventorySystem)
+    local readableSystems = {
+        ['ox_inventory'] = true,
+        ['qb-inventory'] = true,
+        ['qs-inventory'] = true,
+        ['ps-inventory'] = true,
+        ['origen-inventory'] = true,
+        ['core_inventory'] = true,
+        ['ak47_inventory'] = true,
+        ['jaksam_inventory'] = true,
+        ['jpr-inventory'] = true
+    }
+
+    return readableSystems[inventorySystem] == true
+end
+
 local function RegisterInventoryStash(inventorySystem, stashContext, label, slots, weight, owner, groups, coords)
     if inventorySystem == 'ox_inventory' then
         exports.ox_inventory:RegisterStash(stashContext.raw, label, slots, weight, owner, groups, coords)
@@ -812,6 +828,10 @@ exports('SupportsStashes', function()
     return SupportsStashSystem(GetActiveInventoryType())
 end)
 
+exports('CanReadStashItems', function()
+    return SupportsStashItemRead(GetActiveInventoryType())
+end)
+
 -- EXPORT: RegisterStash(stashId, label, slots, weight, owner, groups, coords) - Register a stash with the active inventory
 -- Returns: true if successful, false otherwise
 exports('RegisterStash', function(stashId, label, slots, weight, owner, groups, coords)
@@ -869,6 +889,10 @@ exports('GetStashItems', function(stashId)
     if not inventorySystem then
         ZlomaCore.Warn("Inventory", "GetStashItems")
         return {}
+    end
+
+    if not SupportsStashItemRead(inventorySystem) then
+        return nil
     end
 
     return GetInventoryStashItems(inventorySystem, BuildStashContext(stashId))

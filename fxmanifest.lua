@@ -126,6 +126,7 @@ server_exports {
     'GetItemMetadata',
     'GetInventorySystem',
     'SupportsStashes',
+    'CanReadStashItems',
     'RegisterStash',
     'OpenStash',
     'GetStashItems'
