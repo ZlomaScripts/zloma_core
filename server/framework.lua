@@ -787,7 +787,7 @@ end)
 -- EXPORT: CreateUseableItem(item, callback) - Register usable item
 -- callback(source, item, ...)
 exports('CreateUseableItem', function(item, callback)
-    if not item or not callback then return false end
+    if not item or type(callback) ~= 'function' then return false end
 
     if not FrameworkType then
         ZlomaCore.Warn("Framework", "CreateUseableItem")
@@ -803,9 +803,16 @@ exports('CreateUseableItem', function(item, callback)
             callback(source, itemData)
         end)
     elseif FrameworkType == 'QBox' then
-        exports.qbx_core:CreateUseableItem(item, function(source, itemData)
-            callback(source, itemData)
+        local ok = pcall(function()
+            exports.qbx_core:CreateUseableItem(item, function(source, itemData)
+                callback(source, itemData)
+            end)
         end)
+
+        if not ok then
+            ZlomaCore.Debug(string.format("CreateUseableItem not supported for framework %s", tostring(FrameworkType)))
+            return false
+        end
     end
 
     return true

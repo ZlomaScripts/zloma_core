@@ -124,7 +124,11 @@ server_exports {
     'RemoveItem',
     'GetInventory',
     'GetItemMetadata',
-    'GetInventorySystem'
+    'GetInventorySystem',
+    'SupportsStashes',
+    'RegisterStash',
+    'OpenStash',
+    'GetStashItems'
 }
 
 -- Provides unified interface for all zloma scripts

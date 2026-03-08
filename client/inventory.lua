@@ -13,6 +13,14 @@ local InventoryType = nil
 local QBCore = nil
 local ESX = nil
 
+local function GetActiveInventoryType()
+    if not InventoryType then
+        InventoryType = ZlomaCore.Cache.Inventory
+    end
+
+    return InventoryType
+end
+
 -- Initialize inventory detection and cache framework objects
 CreateThread(function()
     Wait(ZlomaCore.Config.Timeouts.InitWait or 1000) -- Wait for frameworks to load
@@ -190,4 +198,42 @@ exports('HasItem', function(item, count, metadata)
     end
 
     return foundCount >= count
+end)
+
+RegisterNetEvent('zloma_core:client:openStash', function(data)
+    local inventorySystem = (data and data.inventorySystem) or GetActiveInventoryType()
+    if not inventorySystem or not data or not data.stashId then
+        return
+    end
+
+    local stashData = {
+        id = data.stashId,
+        identifier = data.stashId,
+        type = 'stash',
+        label = data.label,
+        slots = data.slots,
+        maxSlots = data.slots,
+        maxweight = data.weight,
+        maxWeight = data.weight,
+        weight = data.weight
+    }
+
+    if inventorySystem == 'qs-inventory' or inventorySystem == 'codem-inventory' then
+        TriggerEvent('inventory:client:SetCurrentStash', data.stashId)
+        TriggerServerEvent('inventory:server:OpenInventory', 'stash', data.stashId, stashData)
+    elseif inventorySystem == 'core_inventory' then
+        TriggerServerEvent('core_inventory:server:openInventory', data.stashId, 'stash', data.label, data.slots, nil, data.weight)
+    elseif inventorySystem == 'ak47_inventory' then
+        if exports['ak47_inventory'] and exports['ak47_inventory'].OpenInventory then
+            exports['ak47_inventory']:OpenInventory(stashData)
+        end
+    elseif inventorySystem == 'jaksam_inventory' then
+        if exports['jaksam_inventory'] and exports['jaksam_inventory'].openInventory then
+            exports['jaksam_inventory']:openInventory(data.fallbackId or data.stashId)
+        end
+    elseif inventorySystem == 'S-Inventory' then
+        if exports['S-Inventory'] and exports['S-Inventory'].OpenStashInventory then
+            exports['S-Inventory']:OpenStashInventory(nil, stashData)
+        end
+    end
 end)

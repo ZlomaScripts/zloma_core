@@ -5,6 +5,377 @@
 
 local InventoryType = nil
 
+local function GetActiveInventoryType()
+    if not InventoryType then
+        InventoryType = ZlomaCore.Cache.Inventory
+    end
+
+    return InventoryType
+end
+
+local function NormalizeInventoryItems(items)
+    if not items then
+        return {}
+    end
+
+    for _, item in pairs(items) do
+        if item.info and not item.metadata then
+            item.metadata = item.info
+        end
+
+        if item.amount and not item.count then
+            item.count = item.amount
+        end
+    end
+
+    return items
+end
+
+local function IsQbStyleInventory(inventorySystem)
+    return inventorySystem == 'qb-inventory' or inventorySystem == 'ps-inventory' or inventorySystem == 'jpr-inventory'
+end
+
+local function RegisterQbStyleStash(resourceName, stashId, label, slots, weight)
+    local stashData = {
+        id = stashId,
+        label = label,
+        maxweight = weight,
+        maxWeight = weight,
+        slots = slots
+    }
+
+    if exports[resourceName] and exports[resourceName].RegisterInventory then
+        exports[resourceName]:RegisterInventory(stashId, stashData)
+        return true
+    end
+
+    if exports[resourceName] and exports[resourceName].CreateInventory then
+        exports[resourceName]:CreateInventory(stashId, stashData)
+        return true
+    end
+
+    return false
+end
+
+local function CallExport(resourceName, exportName, ...)
+    local resourceExports = exports[resourceName]
+    if not resourceExports or not resourceExports[exportName] then
+        return false, nil
+    end
+
+    return pcall(function(...)
+        return resourceExports[exportName](resourceExports, ...)
+    end, ...)
+end
+
+local function TryExportVariants(resourceName, exportName, variants)
+    for _, args in ipairs(variants) do
+        local ok, result = CallExport(resourceName, exportName, table.unpack(args))
+        if ok and result ~= false then
+            return true, result
+        end
+    end
+
+    return false, nil
+end
+
+local function BuildStashOpenData(label, slots, weight)
+    return {
+        label = label,
+        slots = slots,
+        maxweight = weight,
+        maxWeight = weight,
+        weight = weight
+    }
+end
+
+local function BuildStashContext(stashId, owner)
+    local rawId = tostring(stashId)
+    local sanitizedId = rawId:gsub('%s+', '_'):gsub('%-', '_')
+    local ownerSuffix = owner and ('_' .. tostring(owner)) or ''
+
+    return {
+        raw = rawId,
+        sanitized = sanitizedId,
+        qbOwner = rawId .. ownerSuffix,
+        stashUnderscore = 'stash_' .. sanitizedId,
+        stashCaps = 'Stash_' .. sanitizedId,
+        stashDash = ('stash-' .. sanitizedId):gsub('%s+', ''),
+        stashColon = 'stash:' .. sanitizedId,
+        owner = owner
+    }
+end
+
+local function ExtractInventoryItems(inventory)
+    if not inventory then
+        return {}
+    end
+
+    if inventory.items then
+        return inventory.items
+    end
+
+    if inventory.inventory then
+        return inventory.inventory
+    end
+
+    return inventory
+end
+
+local function SupportsStashSystem(inventorySystem)
+    local supportedSystems = {
+        ['ox_inventory'] = true,
+        ['qb-inventory'] = true,
+        ['qs-inventory'] = true,
+        ['ps-inventory'] = true,
+        ['codem-inventory'] = true,
+        ['tgiann-inventory'] = true,
+        ['origen-inventory'] = true,
+        ['core_inventory'] = true,
+        ['ak47_inventory'] = true,
+        ['jaksam_inventory'] = true,
+        ['jpr-inventory'] = true,
+        ['S-Inventory'] = true
+    }
+
+    return supportedSystems[inventorySystem] == true
+end
+
+local function RegisterInventoryStash(inventorySystem, stashContext, label, slots, weight, owner, groups, coords)
+    if inventorySystem == 'ox_inventory' then
+        exports.ox_inventory:RegisterStash(stashContext.raw, label, slots, weight, owner, groups, coords)
+        return true
+    elseif inventorySystem == 'qb-inventory' then
+        return RegisterQbStyleStash('qb-inventory', stashContext.qbOwner, label, slots, weight)
+    elseif inventorySystem == 'ps-inventory' then
+        return RegisterQbStyleStash('ps-inventory', stashContext.stashUnderscore, label, slots, weight)
+            or RegisterQbStyleStash('ps-inventory', stashContext.raw, label, slots, weight)
+    elseif inventorySystem == 'jpr-inventory' then
+        return RegisterQbStyleStash('jpr-inventory', stashContext.qbOwner, label, slots, weight) or true
+    elseif inventorySystem == 'qs-inventory' then
+        local ok = TryExportVariants('qs-inventory', 'RegisterStash', {
+            {0, stashContext.stashUnderscore, slots, weight},
+            {stashContext.stashUnderscore, label, slots, weight},
+            {stashContext.raw, label, slots, weight},
+            {stashContext.raw, slots, weight}
+        })
+        return ok
+    elseif inventorySystem == 'codem-inventory' then
+        return true
+    elseif inventorySystem == 'tgiann-inventory' then
+        local ok = TryExportVariants('tgiann-inventory', 'RegisterStash', {
+            {stashContext.raw, label, slots, weight},
+            {{
+                id = stashContext.raw,
+                label = label,
+                maxSlots = slots,
+                maxWeight = weight,
+                runtimeOnly = true
+            }},
+            {{
+                stashId = stashContext.raw,
+                label = label,
+                slots = slots,
+                weight = weight,
+                runtimeOnly = true
+            }}
+        })
+        return ok
+    elseif inventorySystem == 'origen-inventory' then
+        local ok = TryExportVariants('origen_inventory', 'RegisterStash', {
+            {stashContext.raw, { label = label, slots = slots, weight = weight }},
+            {stashContext.raw, label, slots, weight}
+        })
+        return ok
+    elseif inventorySystem == 'core_inventory' then
+        return true
+    elseif inventorySystem == 'ak47_inventory' then
+        local ok = TryExportVariants('ak47_inventory', 'LoadInventory', {
+            {stashContext.raw, { label = label, maxWeight = weight, maxSlots = slots, type = 'stash' }},
+            {stashContext.raw, { label = label, maxweight = weight, slots = slots, type = 'stash' }},
+            {stashContext.stashColon, { label = label, maxWeight = weight, maxSlots = slots, type = 'stash' }}
+        })
+        return ok
+    elseif inventorySystem == 'jaksam_inventory' then
+        local ok = TryExportVariants('jaksam_inventory', 'registerStash', {
+            {{
+                id = stashContext.raw,
+                label = label,
+                maxSlots = slots,
+                maxWeight = weight,
+                runtimeOnly = true
+            }},
+            {stashContext.raw, label, slots, weight}
+        })
+        return ok
+    elseif inventorySystem == 'S-Inventory' then
+        return true
+    end
+
+    return false
+end
+
+local function OpenInventoryStash(inventorySystem, source, stashContext, label, slots, weight, owner, groups, coords)
+    local stashData = BuildStashOpenData(label, slots, weight)
+
+    if inventorySystem == 'ox_inventory' then
+        exports.ox_inventory:RegisterStash(stashContext.raw, label, slots, weight, owner, groups, coords)
+        exports.ox_inventory:forceOpenInventory(source, 'stash', stashContext.raw)
+        return true
+    elseif inventorySystem == 'qb-inventory' then
+        return TryExportVariants('qb-inventory', 'OpenInventory', {
+            {source, stashContext.qbOwner, stashData},
+            {source, stashData}
+        })
+    elseif inventorySystem == 'ps-inventory' then
+        return TryExportVariants('ps-inventory', 'OpenInventory', {
+            {source, stashContext.stashUnderscore, stashData},
+            {source, stashContext.raw, stashData},
+            {source, stashData}
+        })
+    elseif inventorySystem == 'jpr-inventory' then
+        return TryExportVariants('jpr-inventory', 'OpenInventory', {
+            {source, stashContext.qbOwner, stashData},
+            {source, stashData}
+        })
+    elseif inventorySystem == 'qs-inventory' or inventorySystem == 'codem-inventory' or inventorySystem == 'core_inventory' or inventorySystem == 'ak47_inventory' or inventorySystem == 'jaksam_inventory' or inventorySystem == 'S-Inventory' then
+        local clientStashId = stashContext.raw
+
+        if inventorySystem == 'qs-inventory' then
+            clientStashId = stashContext.stashUnderscore
+        elseif inventorySystem == 'core_inventory' then
+            clientStashId = stashContext.stashDash
+        end
+
+        TriggerClientEvent('zloma_core:client:openStash', source, {
+            inventorySystem = inventorySystem,
+            stashId = clientStashId,
+            fallbackId = stashContext.raw,
+            label = label,
+            slots = slots,
+            weight = weight
+        })
+        return true
+    elseif inventorySystem == 'tgiann-inventory' then
+        return TryExportVariants('tgiann-inventory', 'OpenInventory', {
+            {source, 'stash', stashContext.raw},
+            {source, 'stash', stashContext.raw, stashData},
+            {source, stashContext.raw, stashData}
+        })
+    elseif inventorySystem == 'origen-inventory' then
+        return TryExportVariants('origen_inventory', 'OpenInventory', {
+            {source, 'stash', stashContext.raw},
+            {source, 'stash', stashContext.raw, stashData},
+            {source, stashContext.raw, stashData}
+        })
+    end
+
+    return false
+end
+
+local function GetInventoryStashItems(inventorySystem, stashContext)
+    if inventorySystem == 'ox_inventory' then
+        return NormalizeInventoryItems(exports.ox_inventory:GetInventoryItems(stashContext.raw, false) or {})
+    elseif inventorySystem == 'qb-inventory' then
+        local ok, inventory = TryExportVariants('qb-inventory', 'GetInventory', {
+            {stashContext.qbOwner},
+            {stashContext.raw}
+        })
+        return NormalizeInventoryItems(ExtractInventoryItems(ok and inventory or nil))
+    elseif inventorySystem == 'ps-inventory' then
+        local ok, items = TryExportVariants('ps-inventory', 'GetStashItems', {
+            {stashContext.stashUnderscore},
+            {stashContext.raw},
+            {stashContext.stashCaps}
+        })
+        if ok then
+            return NormalizeInventoryItems(ExtractInventoryItems(items))
+        end
+
+        ok, items = TryExportVariants('ps-inventory', 'GetInventory', {
+            {stashContext.stashUnderscore},
+            {stashContext.raw}
+        })
+        return NormalizeInventoryItems(ExtractInventoryItems(ok and items or nil))
+    elseif inventorySystem == 'qs-inventory' then
+        local ok, items = TryExportVariants('qs-inventory', 'GetStashItems', {
+            {stashContext.stashUnderscore},
+            {stashContext.raw},
+            {stashContext.stashCaps}
+        })
+        if ok then
+            return NormalizeInventoryItems(ExtractInventoryItems(items))
+        end
+
+        ok, items = TryExportVariants('qs-inventory', 'GetInventory', {
+            {stashContext.stashUnderscore},
+            {stashContext.raw}
+        })
+        return NormalizeInventoryItems(ExtractInventoryItems(ok and items or nil))
+    elseif inventorySystem == 'codem-inventory' then
+        local ok, items = TryExportVariants('codem-inventory', 'GetStashItems', {
+            {stashContext.raw},
+            {stashContext.stashUnderscore}
+        })
+        if ok then
+            return NormalizeInventoryItems(ExtractInventoryItems(items))
+        end
+
+        ok, items = TryExportVariants('codem-inventory', 'GetInventory', {
+            {stashContext.raw}
+        })
+        return NormalizeInventoryItems(ExtractInventoryItems(ok and items or nil))
+    elseif inventorySystem == 'tgiann-inventory' then
+        local ok, inventory = TryExportVariants('tgiann-inventory', 'getInventory', {
+            {stashContext.raw}
+        })
+        if ok then
+            return NormalizeInventoryItems(ExtractInventoryItems(inventory))
+        end
+
+        return {}
+    elseif inventorySystem == 'origen-inventory' then
+        local ok, items = TryExportVariants('origen_inventory', 'GetStashItems', {
+            {stashContext.raw}
+        })
+        if ok then
+            return NormalizeInventoryItems(ExtractInventoryItems(items))
+        end
+
+        ok, items = TryExportVariants('origen_inventory', 'GetInventory', {
+            {stashContext.raw}
+        })
+        return NormalizeInventoryItems(ExtractInventoryItems(ok and items or nil))
+    elseif inventorySystem == 'core_inventory' then
+        local ok, inventory = TryExportVariants('core_inventory', 'getInventory', {
+            {stashContext.stashDash},
+            {stashContext.raw}
+        })
+        return NormalizeInventoryItems(ExtractInventoryItems(ok and inventory or nil))
+    elseif inventorySystem == 'ak47_inventory' then
+        local ok, items = TryExportVariants('ak47_inventory', 'GetInventoryItems', {
+            {stashContext.raw},
+            {stashContext.stashColon}
+        })
+        return NormalizeInventoryItems(ExtractInventoryItems(ok and items or nil))
+    elseif inventorySystem == 'jaksam_inventory' then
+        local ok, inventory = TryExportVariants('jaksam_inventory', 'getInventory', {
+            {stashContext.raw}
+        })
+        return NormalizeInventoryItems(ExtractInventoryItems(ok and inventory or nil))
+    elseif inventorySystem == 'jpr-inventory' then
+        local ok, inventory = TryExportVariants('jpr-inventory', 'GetInventory', {
+            {stashContext.qbOwner},
+            {stashContext.raw}
+        })
+        return NormalizeInventoryItems(ExtractInventoryItems(ok and inventory or nil))
+    elseif inventorySystem == 'S-Inventory' then
+        return {}
+    end
+
+    return {}
+end
+
 -- Initialize inventory detection
 CreateThread(function()
     Wait(ZlomaCore.Config.Timeouts.InitWait or 500) -- Wait for config initialization
@@ -33,7 +404,7 @@ end)
 -- EXPORT: HasItem(source, item, count) - Check if player has item with minimum count
 -- Returns: true/false
 exports('HasItem', function(source, item, count)
-    if not InventoryType then
+    if not GetActiveInventoryType() then
         ZlomaCore.Warn("Inventory", "HasItem")
         return false
     end
@@ -118,7 +489,7 @@ end)
 -- EXPORT: GetItemCount(source, item) - Get exact item quantity
 -- Returns: Number (0 if not found)
 exports('GetItemCount', function(source, item)
-    if not InventoryType then
+    if not GetActiveInventoryType() then
         ZlomaCore.Warn("Inventory", "GetItemCount")
         return 0
     end
@@ -180,7 +551,7 @@ end)
 -- EXPORT: AddItem(source, item, count, metadata) - Add item to player inventory
 -- Returns: true if successful, false otherwise
 exports('AddItem', function(source, item, count, metadata)
-    if not InventoryType then
+    if not GetActiveInventoryType() then
         ZlomaCore.Warn("Inventory", "AddItem")
         return false
     end
@@ -252,7 +623,7 @@ end)
 -- EXPORT: RemoveItem(source, item, count, metadata, slot) - Remove item from player inventory
 -- Returns: true if successful, false otherwise
 exports('RemoveItem', function(source, item, count, metadata, slot)
-    if not InventoryType then
+    if not GetActiveInventoryType() then
         ZlomaCore.Warn("Inventory", "RemoveItem")
         return false
     end
@@ -333,7 +704,7 @@ end)
 -- EXPORT: GetInventory(source) - Get player's full inventory
 -- Returns: Table of items (normalized structure where possible)
 exports('GetInventory', function(source)
-    if not InventoryType then
+    if not GetActiveInventoryType() then
         ZlomaCore.Warn("Inventory", "GetInventory")
         return {}
     end
@@ -385,22 +756,14 @@ exports('GetInventory', function(source)
 
     -- Normalize 'info' to 'metadata' if missing (for QBCore/QS/PS)
     -- This ensures scripts like zloma_keys can read metadata uniformly
-    if items then
-        for _, item in pairs(items) do
-            if item.info and not item.metadata then
-                item.metadata = item.info
-            end
-        end
-    end
-
-    return items
+    return NormalizeInventoryItems(items)
 end)
 
 
 -- EXPORT: GetItemMetadata(source, item) - Get item metadata/info
 -- Returns: Metadata table or nil
 exports('GetItemMetadata', function(source, item)
-    if not InventoryType then
+    if not GetActiveInventoryType() then
         ZlomaCore.Warn("Inventory", "GetItemMetadata")
         return nil
     end
@@ -440,5 +803,73 @@ end)
 --- Get detected inventory system name
 --- @return string|nil - Detected inventory system name or nil
 exports('GetInventorySystem', function()
-    return InventoryType
+    return GetActiveInventoryType()
+end)
+
+-- EXPORT: SupportsStashes() - Check whether the active inventory backend supports stash wrappers
+-- Returns: true/false
+exports('SupportsStashes', function()
+    return SupportsStashSystem(GetActiveInventoryType())
+end)
+
+-- EXPORT: RegisterStash(stashId, label, slots, weight, owner, groups, coords) - Register a stash with the active inventory
+-- Returns: true if successful, false otherwise
+exports('RegisterStash', function(stashId, label, slots, weight, owner, groups, coords)
+    local inventorySystem = GetActiveInventoryType()
+    if not inventorySystem then
+        ZlomaCore.Warn("Inventory", "RegisterStash")
+        return false
+    end
+
+    slots = slots or 50
+    weight = weight or 100000
+    label = label or stashId
+
+    local stashContext = BuildStashContext(stashId, owner)
+    local success = RegisterInventoryStash(inventorySystem, stashContext, label, slots, weight, owner, groups, coords)
+    if success then
+        return true
+    end
+
+    ZlomaCore.Debug(string.format("RegisterStash unsupported for inventory system: %s", inventorySystem))
+    return false
+end)
+
+-- EXPORT: OpenStash(source, stashId, label, slots, weight, owner, groups, coords) - Open a stash for a player
+-- Returns: true if successful, false otherwise
+exports('OpenStash', function(source, stashId, label, slots, weight, owner, groups, coords)
+    local inventorySystem = GetActiveInventoryType()
+    if not inventorySystem then
+        ZlomaCore.Warn("Inventory", "OpenStash")
+        return false
+    end
+
+    slots = slots or 50
+    weight = weight or 100000
+    label = label or stashId
+
+    local stashContext = BuildStashContext(stashId, owner)
+    if not RegisterInventoryStash(inventorySystem, stashContext, label, slots, weight, owner, groups, coords) then
+        ZlomaCore.Debug(string.format("OpenStash failed to register stash for inventory system: %s", inventorySystem))
+        return false
+    end
+
+    if OpenInventoryStash(inventorySystem, source, stashContext, label, slots, weight, owner, groups, coords) then
+        return true
+    end
+
+    ZlomaCore.Debug(string.format("OpenStash unsupported for inventory system: %s", inventorySystem))
+    return false
+end)
+
+-- EXPORT: GetStashItems(stashId) - Read items from a registered stash
+-- Returns: normalized item table
+exports('GetStashItems', function(stashId)
+    local inventorySystem = GetActiveInventoryType()
+    if not inventorySystem then
+        ZlomaCore.Warn("Inventory", "GetStashItems")
+        return {}
+    end
+
+    return GetInventoryStashItems(inventorySystem, BuildStashContext(stashId))
 end)
