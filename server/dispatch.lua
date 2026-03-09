@@ -26,13 +26,31 @@ local function GetDispatchCoords(source, coords)
     return vec3(0.0, 0.0, 0.0)
 end
 
+local StreetLookupUnavailableWarned = false
+
+local function FormatDispatchFallbackStreet(coords)
+    return ('GPS: %.1f, %.1f'):format(coords.x or 0.0, coords.y or 0.0)
+end
+
 local function GetDispatchStreet(coords)
-    local streetHash = GetStreetNameAtCoord(coords.x, coords.y, coords.z)
-    if streetHash and streetHash ~= 0 then
-        return GetStreetNameFromHashKey(streetHash)
+    if type(GetStreetNameAtCoord) ~= 'function' or type(GetStreetNameFromHashKey) ~= 'function' then
+        if not StreetLookupUnavailableWarned then
+            StreetLookupUnavailableWarned = true
+            ZlomaCore.Debug('Dispatch street lookup native is unavailable on the server; using coordinate fallback labels.')
+        end
+
+        return FormatDispatchFallbackStreet(coords)
     end
 
-    return ''
+    local streetHash = GetStreetNameAtCoord(coords.x, coords.y, coords.z)
+    if streetHash and streetHash ~= 0 then
+        local streetName = GetStreetNameFromHashKey(streetHash)
+        if streetName and streetName ~= '' then
+            return streetName
+        end
+    end
+
+    return FormatDispatchFallbackStreet(coords)
 end
 
 local function GetDispatchSystem()
