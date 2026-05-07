@@ -539,18 +539,31 @@ end)
 
 -- EXPORT: Notify(source, message, type, duration) - Send notification to client
 -- Server-side wrapper that triggers client notification
-exports('Notify', function(source, message, type, duration)
+-- Supports both:
+--   Notify(source, 'message', 'type', duration)
+--   Notify(source, { title=..., description=..., type=..., duration=... })
+exports('Notify', function(source, message, notifyType, duration)
     if not source or source == 0 then
         print('[zloma_core] Cannot notify server console')
         return
     end
 
-    TriggerClientEvent('zloma_core:notify', source, {
-        title = nil,
-        description = message,
-        type = type or 'inform',
-        duration = duration or 5000
-    })
+    local payload
+    if type(message) == 'table' then
+        -- Already a structured notification table — forward as-is
+        payload = message
+        if not payload.duration then payload.duration = duration or 5000 end
+        if not payload.type then payload.type = 'inform' end
+    else
+        payload = {
+            title = nil,
+            description = message,
+            type = notifyType or 'inform',
+            duration = duration or 5000
+        }
+    end
+
+    TriggerClientEvent('zloma_core:notify', source, payload)
 end)
 
 -- Server callback: Get player job (for client-side calls)
