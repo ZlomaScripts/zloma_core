@@ -27,7 +27,7 @@ Unified interface for ESX, QBCore, and QBox with automatic detection and gracefu
 | Dispatch | 10 | ps-dispatch, piotreq_gpt, cd_dispatch, qs-dispatch, tk_dispatch... |
 | Fuel | 16 | lc_fuel, LegacyFuel, ox_fuel, Renewed-Fuel, cdn-fuel, ps-fuel... |
 | Society/Banking | 18 | esx_addonaccount, qb-banking, okokBanking, Renewed-Banking, wasabi_banking... |
-| Billing | 4 | okokBilling, okok_billing, esx_billing, qb-billing |
+| Billing | 3 | okokBilling,esx_billing, qb-billing |
 | Target | 3 | ox_target, qb-target, qtarget |
 
 Full list of supported systems in `shared/config.lua`.
