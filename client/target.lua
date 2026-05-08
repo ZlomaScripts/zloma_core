@@ -5,6 +5,13 @@
 local TargetType = nil
 
 -- ============================================================================
+-- ZONE REGISTRY — tracks which zone names have been added
+-- Used to skip RemoveZone calls for zones that were never created,
+-- preventing target-system "zone does not exist" warnings.
+-- ============================================================================
+local registeredZones = {}  -- registeredZones[name] = true
+
+-- ============================================================================
 -- EVENT REGISTRY SYSTEM - Memory Leak Prevention
 -- ============================================================================
 -- Tracks all dynamically registered events for proper cleanup
@@ -336,6 +343,7 @@ exports('AddBoxZone', function(name, coords, options)
             options = oxOptions
         })
         success = true
+        registeredZones[name] = true
         ZlomaCore.Debug(string.format("ox_target: Added box zone '%s'", name))
     elseif TargetType == 'qb-target' then
         -- qb-target zone format
@@ -413,6 +421,7 @@ exports('AddBoxZone', function(name, coords, options)
             targetOptionsWrapper -- Pass wrapped options
         )
         success = true
+        registeredZones[name] = true
         ZlomaCore.Debug(string.format("qb-target: Added box zone '%s'", name))
     elseif TargetType == 'qtarget' then
         -- qtarget zone format (similar to qb-target)
@@ -450,6 +459,7 @@ exports('AddBoxZone', function(name, coords, options)
             qtTargetOptions
         )
         success = true
+        registeredZones[name] = true
         ZlomaCore.Debug(string.format("qtarget: Added box zone '%s'", name))
     end
 
@@ -486,6 +496,7 @@ exports('AddSphereZone', function(options)
     if TargetType == 'ox_target' then
         -- ox_target accepts sphere zone directly
         local zoneId = exports.ox_target:addSphereZone(options)
+        registeredZones[name] = true
         ZlomaCore.Debug(string.format("ox_target: Added sphere zone '%s'", name))
         return zoneId
     elseif TargetType == 'qb-target' or TargetType == 'qtarget' then
@@ -560,6 +571,7 @@ exports('AddSphereZone', function(options)
             targetOptions
         )
         ZlomaCore.Debug(string.format("%s: Added circle zone '%s'", TargetType, name))
+        registeredZones[name] = true
         return name
     end
 
@@ -772,6 +784,11 @@ exports('RemoveZone', function(name)
         return false
     end
 
+    -- Skip silently if we never registered this zone (prevents "zone does not exist" warnings)
+    if not registeredZones[name] then
+        return false
+    end
+
     if not TargetType then
         ZlomaCore.Warn("Target", "RemoveZone")
         return false
@@ -791,6 +808,10 @@ exports('RemoveZone', function(name)
         exports['qtarget']:RemoveZone(name)
         success = true
         ZlomaCore.Debug(string.format("qtarget: Removed zone '%s'", name))
+    end
+
+    if success then
+        registeredZones[name] = nil
     end
 
     return success
