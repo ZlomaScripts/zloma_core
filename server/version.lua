@@ -7,7 +7,7 @@ local currentVersion = GetResourceMetadata(GetCurrentResourceName(), 'version', 
 
 -- Remote version URL (host this JSON file on GitHub or your server)
 -- IMPORTANT: Must be RAW URL, not blob URL. Click "Raw" button on GitHub to get correct URL
-local versionUrl = 'https://gist.githubusercontent.com/ZlomaScripts/721203c66e700a23b1a820fe7d957246/raw/58b7acf9a0aff5b40b7c6f9131f12d5ea57aa5e5/version.json'
+local versionUrl = 'https://gist.githubusercontent.com/ZlomaScripts/721203c66e700a23b1a820fe7d957246/raw/version.json'
 
 local function CheckVersion()
     PerformHttpRequest(versionUrl, function(statusCode, response, headers)
