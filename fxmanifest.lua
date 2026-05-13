@@ -4,7 +4,7 @@ lua54 'yes'
 
 author 'Zloma'
 description 'ZLOMA CORE - Universal framework wrapper for ESX/QBCore/QBox'
-version '1.0.0'
+version '1.0.5'
 
 dependencies {
     'ox_lib',
@@ -19,6 +19,7 @@ shared_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
+    'server/version.lua',
     'server/framework.lua',
     'server/inventory.lua',
     'server/billing.lua',
