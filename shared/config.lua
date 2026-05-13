@@ -497,8 +497,9 @@ function ZlomaCore.Initialize()
     ZlomaCore.Cache.Society = ZlomaCore.DetectSociety()
 
     -- Console output
+    local _ver = GetResourceMetadata(GetCurrentResourceName(), 'version', 0) or '0.0.0'
     print("^2========================================^0")
-    print("^2ZLOMA CORE v1.0.0 - System Detection^0")
+    print("^2ZLOMA CORE v" .. _ver .. " - System Detection^0")
     print("^2========================================^0")
     print(string.format("^3Framework:^0 %s", ZlomaCore.Cache.Framework or "^1NONE DETECTED^0"))
     print(string.format("^3Inventory:^0 %s", ZlomaCore.Cache.Inventory or "^1NONE DETECTED^0"))
