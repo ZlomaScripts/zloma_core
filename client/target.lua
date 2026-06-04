@@ -9,7 +9,8 @@ local TargetType = nil
 -- Used to skip RemoveZone calls for zones that were never created,
 -- preventing target-system "zone does not exist" warnings.
 -- ============================================================================
-local registeredZones = {}  -- registeredZones[name] = true
+local registeredZones = {}  -- registeredZones[key] = zone name
+local registeredEntityOptions = {} -- registeredEntityOptions[entity] = { optionName, ... }
 
 -- ============================================================================
 -- EVENT REGISTRY SYSTEM - Memory Leak Prevention
@@ -175,6 +176,8 @@ exports('AddEntity', function(entity, options)
     if TargetType == 'ox_target' then
         -- ox_target format
         local oxOptions = {}
+        local entityKey = tostring(entity)
+        registeredEntityOptions[entityKey] = registeredEntityOptions[entityKey] or {}
         for _, opt in ipairs(options) do
                 -- Pass canInteract directly - ox_target handles errors internally
             -- Avoiding pcall wrapper here prevents WaveShield anticheat conflicts
@@ -196,6 +199,10 @@ exports('AddEntity', function(entity, options)
                 canInteract = safeCanInteract,
                 distance = opt.distance or 2.5
             }
+
+            if opt.name then
+                table.insert(registeredEntityOptions[entityKey], opt.name)
+            end
 
             if type(action) == 'string' then
                 oxOpt.event = action
@@ -496,7 +503,11 @@ exports('AddSphereZone', function(options)
     if TargetType == 'ox_target' then
         -- ox_target accepts sphere zone directly
         local zoneId = exports.ox_target:addSphereZone(options)
-        registeredZones[name] = true
+        registeredZones[name] = name
+        if zoneId ~= nil then
+            registeredZones[zoneId] = name
+            registeredZones[tostring(zoneId)] = name
+        end
         ZlomaCore.Debug(string.format("ox_target: Added sphere zone '%s'", name))
         return zoneId
     elseif TargetType == 'qb-target' or TargetType == 'qtarget' then
@@ -571,7 +582,7 @@ exports('AddSphereZone', function(options)
             targetOptions
         )
         ZlomaCore.Debug(string.format("%s: Added circle zone '%s'", TargetType, name))
-        registeredZones[name] = true
+        registeredZones[name] = name
         return name
     end
 
@@ -598,11 +609,21 @@ exports('RemoveEntity', function(entity, optionNames)
         optionNames = { optionNames }
     end
 
+    local entityKey = tostring(entity)
+    if not optionNames and registeredEntityOptions[entityKey] then
+        optionNames = registeredEntityOptions[entityKey]
+    end
+
     local success = false
 
     if TargetType == 'ox_target' then
         if exports.ox_target then
-            exports.ox_target:removeLocalEntity(entity, optionNames)
+            if optionNames and #optionNames > 0 then
+                exports.ox_target:removeLocalEntity(entity, optionNames)
+            else
+                success = false
+                return false
+            end
             success = true
             ZlomaCore.Debug(string.format("ox_target: Removed entity target options: %s", table.concat(optionNames or {}, ', ')))
         end
@@ -615,6 +636,10 @@ exports('RemoveEntity', function(entity, optionNames)
         exports['qtarget']:RemoveTargetEntity(entity)
         success = true
         ZlomaCore.Debug("qtarget: Removed entity target")
+    end
+
+    if success then
+        registeredEntityOptions[entityKey] = nil
     end
 
     return success
@@ -784,8 +809,17 @@ exports('RemoveZone', function(name)
         return false
     end
 
+    local zoneKey  = name
+    local zoneName = registeredZones[zoneKey]
+    if not zoneName and type(zoneKey) ~= 'string' then
+        zoneName = registeredZones[tostring(zoneKey)]
+    end
+    if not zoneName and type(zoneKey) == 'string' then
+        zoneName = zoneKey
+    end
+
     -- Skip silently if we never registered this zone (prevents "zone does not exist" warnings)
-    if not registeredZones[name] then
+    if not zoneName or not registeredZones[zoneName] then
         return false
     end
 
@@ -797,21 +831,25 @@ exports('RemoveZone', function(name)
     local success = false
 
     if TargetType == 'ox_target' then
-        exports.ox_target:removeZone(name)
+        exports.ox_target:removeZone(zoneName)
         success = true
-        ZlomaCore.Debug(string.format("ox_target: Removed zone '%s'", name))
+        ZlomaCore.Debug(string.format("ox_target: Removed zone '%s'", zoneName))
     elseif TargetType == 'qb-target' then
-        exports['qb-target']:RemoveZone(name)
+        exports['qb-target']:RemoveZone(zoneName)
         success = true
-        ZlomaCore.Debug(string.format("qb-target: Removed zone '%s'", name))
+        ZlomaCore.Debug(string.format("qb-target: Removed zone '%s'", zoneName))
     elseif TargetType == 'qtarget' then
-        exports['qtarget']:RemoveZone(name)
+        exports['qtarget']:RemoveZone(zoneName)
         success = true
-        ZlomaCore.Debug(string.format("qtarget: Removed zone '%s'", name))
+        ZlomaCore.Debug(string.format("qtarget: Removed zone '%s'", zoneName))
     end
 
     if success then
-        registeredZones[name] = nil
+        registeredZones[zoneName] = nil
+        registeredZones[zoneKey] = nil
+        if type(zoneKey) ~= 'string' then
+            registeredZones[tostring(zoneKey)] = nil
+        end
     end
 
     return success
