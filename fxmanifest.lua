@@ -4,7 +4,7 @@ lua54 'yes'
 
 author 'Zloma'
 description 'ZLOMA CORE - Universal framework wrapper for ESX/QBCore/QBox'
-version '1.0.5'
+version '1.1.0'
 
 dependencies {
     'ox_lib',
@@ -14,74 +14,111 @@ dependencies {
 shared_scripts {
     '@ox_lib/init.lua',
 
-    'shared/config.lua'
+    'shared/config.lua',
+    'shared/provider_catalog.lua',
+    'shared/detection.lua',
+    'shared/adapter_registry.lua'
 }
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
     'server/version.lua',
-    'server/framework.lua',
-    'server/inventory.lua',
-    'server/billing.lua',
-    'server/callbacks.lua',
-    'server/dispatch.lua',
-    'server/fuel.lua'
+    -- Dispatch loads shared helpers, individual providers, then its public API.
+    'server/dispatch/shared.lua',
+    'server/dispatch/ps-dispatch.lua',
+    'server/dispatch/cd_dispatch.lua',
+    'server/dispatch/qs-dispatch.lua',
+    'server/dispatch/tk_dispatch.lua',
+    'server/dispatch/rcore_dispatch.lua',
+    'server/dispatch/lb-tablet.lua',
+    'server/dispatch/kartik-mdt.lua',
+    'server/dispatch/piotreq_gpt.lua',
+    'server/dispatch/origen_police.lua',
+    'server/dispatch/init.lua',
+    'server/framework/init.lua',
+    'server/inventory/init.lua',
+    'server/billing/registry.lua',
+    'server/billing/providers/*.lua',
+    'server/billing/init.lua',
+    'server/callbacks/init.lua',
+    'server/fuel/registry.lua',
+    'server/fuel/providers/*.lua',
+    'server/fuel/init.lua'
 }
 
 client_scripts {
-    'client/init.lua',      -- Initialize detection FIRST
-    'client/appearance.lua',
-    'client/inventory.lua', -- Added generic client inventory wrapper
-    'client/notifications.lua',
-    'client/keys.lua',
-    'client/target.lua',
-    'client/fuel.lua', -- Fuel system wrapper
-    'client/callbacks.lua'
+    'client/core/init.lua',      -- Initialize detection FIRST
+    'client/appearance/registry.lua',
+    'client/appearance/providers/*.lua',
+    'client/appearance/init.lua',
+    'client/inventory/init.lua', -- Added generic client inventory wrapper
+    'client/notifications/registry.lua',
+    'client/notifications/providers/*.lua',
+    'client/notifications/init.lua',
+    'client/keys/init.lua',
+    'client/target/init.lua',
+    'client/fuel/registry.lua',
+    'client/fuel/providers/*.lua',
+    'client/fuel/init.lua', -- Fuel system wrapper
+    'client/callbacks/init.lua'
 }
 
 -- ════════════════════════════════════════════════════════════════════════════════
 -- CLIENT EXPORTS (declared for anticheat compatibility)
 -- ════════════════════════════════════════════════════════════════════════════════
 exports {
-    -- init.lua
+    -- client/core/init.lua and client/appearance/init.lua
     'IsAdmin',
     'GetPlayerJob',
     'GetPlayerGang',
     'GetAppearanceSystem',
     'GetCurrentSkin',
+    'GetPlayerAppearance',
+    'GetPlayerClothing',
     'SetPlayerSkin',
+    'SetPlayerAppearance',
     'SetPlayerClothing',
     'OpenWardrobe',
-    -- inventory.lua
+    -- client/inventory/init.lua
     'GetInventory',
     'HasItem',
-    -- notifications.lua
+    -- client/notifications/init.lua
     'Notify',
     'NotifyAdvanced',
-    -- keys.lua
+    'ShowNotification',
+    'ShowTextUI',
+    'HideTextUI',
+    -- client/keys/init.lua
     'GiveKeys',
     'RemoveKeys',
     'HasKeys',
-    -- target.lua
+    -- client/target/init.lua
     'GetTargetSystem',
     'AddEntity',
     'AddBoxZone',
     'AddSphereZone',
     'RemoveEntity',
     'AddGlobalVehicle',
+    'RemoveGlobalVehicle',
     'RemoveZone',
     'SetTargetingEnabled',
-    -- fuel.lua
+    -- client/callbacks/init.lua
+    'RegisterClientCallback',
+    'RemoveClientCallback',
+    'TriggerServerCallback',
+    -- client/fuel/init.lua
     'GetVehicleFuel',
     'SetVehicleFuel',
-    'GetFuelSystem'
+    'GetFuelSystem',
+    'GetFuel',
+    'SetFuel'
 }
 
 -- ════════════════════════════════════════════════════════════════════════════════
 -- SERVER EXPORTS (declared for anticheat compatibility)
 -- ════════════════════════════════════════════════════════════════════════════════
 server_exports {
-    -- framework.lua
+    -- server/framework/init.lua
     'GetFrameworkType',
     'GetPlayer',
     'GetPlayerMoney',
@@ -111,14 +148,16 @@ server_exports {
     'SetOfflinePlayerJob',
     'GetDispatchSystem',
     'SendDispatchAlert',
-    -- fuel.lua
+    -- server/fuel/init.lua
     'SetVehicleFuel',
     'GetVehicleFuel',
     'GetFuelSystem',
-    -- billing.lua
+    'GetFuel',
+    'SetFuel',
+    -- server/billing/init.lua
     'SendBill',
     'GetBills',
-    -- inventory.lua
+    -- server/inventory/init.lua
     'HasItem',
     'GetItemCount',
     'AddItem',
@@ -130,7 +169,11 @@ server_exports {
     'CanReadStashItems',
     'RegisterStash',
     'OpenStash',
-    'GetStashItems'
+    'GetStashItems',
+    -- server/callbacks/init.lua
+    'RegisterCallback',
+    'RemoveCallback',
+    'TriggerClientCallback'
 }
 
 -- Provides unified interface for all zloma scripts

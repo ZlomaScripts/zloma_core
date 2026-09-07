@@ -26,11 +26,22 @@ Unified interface for ESX, QBCore, and QBox with automatic detection and gracefu
 | Keys | 21 | Renewed-Vehiclekeys, qb-vehiclekeys, wasabi_carlock, qbx_vehiclekeys, MrNewbVehicleKeys... |
 | Dispatch | 10 | ps-dispatch, piotreq_gpt, cd_dispatch, qs-dispatch, tk_dispatch... |
 | Fuel | 16 | lc_fuel, LegacyFuel, ox_fuel, Renewed-Fuel, cdn-fuel, ps-fuel... |
-| Society/Banking | 18 | esx_addonaccount, qb-banking, okokBanking, Renewed-Banking, wasabi_banking... |
-| Billing | 3 | okokBilling,esx_billing, qb-billing |
+| Society/Banking | 19 | zloma_banking, esx_addonaccount, qb-banking, okokBanking, Renewed-Banking... |
+| Billing | 4 | zloma_banking, okokBilling, esx_billing, qb-billing |
 | Target | 3 | ox_target, qb-target, qtarget |
 
-Full list of supported systems in `shared/config.lua`.
+Full list of supported systems is maintained in `shared/provider_catalog.lua`.
+
+When `zloma_banking` is started, Core selects it automatically for billing and
+society accounts. Its job and gang ledger becomes the single source of truth;
+no manual provider selection is required.
+
+## Project structure
+
+Core modules are grouped by domain. Dispatch, billing, fuel, notifications, and
+appearance use provider registries and feature-local `providers/` directories;
+their facades keep the public exports unchanged. The remaining domains already
+use feature-local `init.lua` entrypoints and retain their existing API.
 
 ---
 
@@ -48,16 +59,23 @@ Full list of supported systems in `shared/config.lua`.
 ```cfg
 ensure ox_lib
 ensure oxmysql
+ensure qb-core       # or es_extended / qbx_core
+ensure ox_inventory # selected inventory backend
+ensure ox_target    # selected target backend
 ensure zloma_core
 ensure zloma_garages  # or any other zloma script
 ```
+
+Framework/inventory/target backends must start before `zloma_core`; scripts that use the core start after it. The core no longer attempts to start or restart unrelated resources automatically.
+
+The legacy client-triggered billing event is disabled by default. Keep billing server-authoritative through `SendBill`, or explicitly configure the guarded compatibility event in `ZlomaCore.Config.Security`.
 
 3. Restart your server — done.
 
 On startup you'll see the detection output:
 ```
 ========================================
-ZLOMA CORE v1.0.0 - System Detection
+ZLOMA CORE v1.1.0 - System Detection
 ========================================
 Framework: QBCore
 Inventory: ox_inventory
@@ -119,6 +137,10 @@ local hasKeys = Core:HasKeys(plate)
 -- Fuel
 local fuel = Core:GetVehicleFuel(vehicle)
 Core:SetVehicleFuel(vehicle, 100.0)
+
+-- Legacy aliases are also available for older Zloma resources.
+Core:GetFuel(vehicle)
+Core:SetFuel(vehicle, 100.0)
 
 -- Target zones
 Core:AddEntity(vehicle, {
@@ -203,6 +225,7 @@ Full API documentation available at [zloma-scripts.gitbook.io](https://zloma-scr
 | `AddBoxZone(name, coords, options)` | Add box target zone |
 | `AddSphereZone(options)` | Add sphere target zone |
 | `AddGlobalVehicle(options)` | Add global vehicle target |
+| `RemoveGlobalVehicle()` | Remove global vehicle targets owned by the calling resource |
 | `RemoveZone(name)` | Remove target zone |
 | `SetTargetingEnabled(enabled)` | Toggle targeting when supported |
 | `GetVehicleFuel(vehicle)` | Get fuel level |
