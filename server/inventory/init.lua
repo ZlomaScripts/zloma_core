@@ -488,10 +488,18 @@ local function GetInventoryStashItems(inventorySystem, stashContext)
     return {}
 end
 
--- Initialize inventory detection
+-- Initialize inventory detection with retry (mirrors framework startup pattern)
 CreateThread(function()
-    Wait(0)
-    InventoryType = GetActiveInventoryType()
+    local startup = ZlomaCore.Config.FrameworkStartup or {}
+    local timeout = math.max(0, tonumber(startup.TimeoutMs) or 15000)
+    local retry = math.max(50, tonumber(startup.RetryMs) or 250)
+    local deadline = GetGameTimer() + timeout
+
+    repeat
+        InventoryType = GetActiveInventoryType()
+        if InventoryType then break end
+        Wait(retry)
+    until GetGameTimer() >= deadline
 
     if InventoryType then
         ZlomaCore.Debug(string.format("Inventory system loaded: %s", InventoryType))
@@ -1010,11 +1018,13 @@ end
 AddEventHandler('onResourceStart', function(resourceName)
     if not IsKnownInventoryResource(resourceName) then return end
     InventoryType = nil
+    ZlomaCore.Cache.Inventory = nil
     registeredStashes = {}
 end)
 
 AddEventHandler('onResourceStop', function(resourceName)
     if not IsKnownInventoryResource(resourceName) then return end
     InventoryType = nil
+    ZlomaCore.Cache.Inventory = nil
     registeredStashes = {}
 end)
