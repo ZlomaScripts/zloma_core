@@ -27,6 +27,22 @@ local InventoryResources = {
 local QBCore = nil
 local ESX = nil
 
+local function RefreshFrameworkObjects()
+    if not QBCore and GetResourceState('qb-core') == 'started' then
+        local success, framework = pcall(function()
+            return exports['qb-core']:GetCoreObject()
+        end)
+        if success and framework then QBCore = framework end
+    end
+
+    if InventoryType == 'S-Inventory' and not ESX and GetResourceState('es_extended') == 'started' then
+        local success, framework = pcall(function()
+            return exports['es_extended']:getSharedObject()
+        end)
+        if success and framework then ESX = framework end
+    end
+end
+
 local function IsInventoryStarted(inventorySystem)
     for _, resourceName in ipairs(InventoryResources[inventorySystem] or {}) do
         if GetResourceState(resourceName) == 'started' then return true end
@@ -66,7 +82,9 @@ end
 
 -- Initialize inventory detection and cache framework objects
 CreateThread(function()
-    Wait(0)
+    -- Give framework and inventory resources time to finish their own start
+    -- handlers before caching client objects.
+    Wait(ZlomaCore.Config.Timeouts.InitWait or 500)
     RefreshInventoryDetection()
 
     if InventoryType then
@@ -87,6 +105,7 @@ end)
 exports('GetInventory', function()
     local items = {}
     GetActiveInventoryType()
+    RefreshFrameworkObjects()
 
     if InventoryType == 'ox_inventory' then
         -- ox_inventory client export
@@ -265,7 +284,11 @@ end
 
 
 AddEventHandler('onClientResourceStart', function(resourceName)
-    if IsKnownInventoryResource(resourceName) then RefreshInventoryDetection() end
+    if not IsKnownInventoryResource(resourceName) then return end
+    CreateThread(function()
+        Wait(0)
+        RefreshInventoryDetection()
+    end)
 end)
 
 AddEventHandler('onClientResourceStop', function(resourceName)

@@ -34,7 +34,12 @@ end)
 
 AddEventHandler('onClientResourceStart', function(resourceName)
     if resourceName == GetCurrentResourceName() then return end
-    RefreshKeysDetection('resource start: ' .. resourceName)
+    CreateThread(function()
+        -- Resource-start events can fire before exports are ready. Refresh on
+        -- the next tick so a just-started key provider is detectable.
+        Wait(0)
+        RefreshKeysDetection('resource start: ' .. resourceName)
+    end)
 end)
 
 AddEventHandler('onClientResourceStop', function(resourceName)
