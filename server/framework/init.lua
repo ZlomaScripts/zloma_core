@@ -205,6 +205,32 @@ AddEventHandler('onResourceStart', function(resourceName)
     end)
 end)
 
+-- `zloma_banking` and `zloma_keys` depend on this resource, so FiveM starts
+-- them after the initial scan in ZlomaCore.Initialize(). Refresh the affected
+-- caches once those providers are actually running instead of leaving the
+-- startup banner with a stale "NONE DETECTED" result.
+local function RefreshLateStartingProviders(resourceName)
+    if resourceName ~= 'zloma_banking' and resourceName ~= 'zloma_keys' then return end
+
+    CreateThread(function()
+        -- Let the provider finish its startup and register exports first.
+        Wait(0)
+
+        if resourceName == 'zloma_banking' then
+            ZlomaCore.Cache.Billing = ZlomaCore.DetectBilling()
+            ZlomaCore.Cache.Society = ZlomaCore.DetectSociety()
+            print(('^2[ZLOMA CORE]^0 Provider detected after startup: Billing: %s | Society: %s')
+                :format(ZlomaCore.Cache.Billing or '^1NONE DETECTED^0', ZlomaCore.Cache.Society or '^1NONE DETECTED^0'))
+        else
+            ZlomaCore.Cache.Keys = ZlomaCore.DetectKeys()
+            print(('^2[ZLOMA CORE]^0 Provider detected after startup: Keys: %s')
+                :format(ZlomaCore.Cache.Keys or '^1NONE DETECTED^0'))
+        end
+    end)
+end
+
+AddEventHandler('onResourceStart', RefreshLateStartingProviders)
+
 AddEventHandler('onResourceStop', function(resourceName)
     local stoppedActiveFramework = (FrameworkType == 'ESX' and resourceName == 'es_extended')
         or (FrameworkType == 'QBCore' and resourceName == 'qb-core')

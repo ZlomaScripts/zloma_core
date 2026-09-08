@@ -4,7 +4,7 @@ lua54 'yes'
 
 author 'Zloma'
 description 'ZLOMA CORE - Universal framework wrapper for ESX/QBCore/QBox'
-version '1.1.0'
+version '1.1.1'
 
 dependencies {
     'ox_lib',
