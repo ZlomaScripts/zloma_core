@@ -175,6 +175,10 @@ end
 
 -- Initialize framework on resource start.
 CreateThread(function()
+    -- Providers such as zloma_banking and zloma_keys declare zloma_core as a
+    -- dependency. Allow FiveM to start those dependent resources before the
+    -- first detection banner is generated.
+    Wait(ZlomaCore.Config.Timeouts.InitWait or 500)
     ZlomaCore.Initialize()
     local startup = ZlomaCore.Config.FrameworkStartup or {}
     local timeout = math.max(0, tonumber(startup.TimeoutMs) or 15000)
