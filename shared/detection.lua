@@ -25,4 +25,30 @@ function ZlomaCore.DetectKeys() return detect('Keys') end
 function ZlomaCore.DetectDispatch() return detect('Dispatch') end
 function ZlomaCore.DetectTarget() return detect('Target') end
 function ZlomaCore.DetectFuel() return detect('Fuel') end
-function ZlomaCore.DetectSociety() return detect('Society') end
+
+-- Society funds must follow the framework's native source of truth when the
+-- administrator has left the provider in auto mode. In particular, ESX
+-- servers often run zloma_banking for its UI and billing, while their existing
+-- job funds live in esx_addonaccount's society_<job> accounts. Selecting
+-- zloma_banking first in that situation would create a second ledger.
+function ZlomaCore.DetectSociety()
+    local manual = ZlomaCore.Config.Manual.Society
+    if manual and manual ~= 'auto' then
+        ZlomaCore.Debug(('Using manual society: %s'):format(manual))
+        return manual
+    end
+
+    local framework = ZlomaCore.Cache.Framework or ZlomaCore.DetectFramework()
+    if framework == 'ESX' then
+        if GetResourceState('esx_addonaccount') == 'started' then
+            return 'esx_addonaccount'
+        end
+
+        -- Never fall back to another ledger on ESX. Returning nil preserves
+        -- the normal "No society system detected" behaviour until the native
+        -- addon-account resource is started.
+        return nil
+    end
+
+    return detect('Society')
+end

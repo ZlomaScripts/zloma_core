@@ -32,9 +32,15 @@ Unified interface for ESX, QBCore, and QBox with automatic detection and gracefu
 
 Full list of supported systems is maintained in `shared/provider_catalog.lua`.
 
-When `zloma_banking` is started, Core selects it automatically for billing and
-society accounts. Its job and gang ledger becomes the single source of truth;
-no manual provider selection is required.
+Society routing follows the active framework while the setting is `auto`:
+
+- **ESX:** `esx_addonaccount` is the sole society source (`society_<job>`).
+  `zloma_banking` can remain active for its UI and billing without creating a
+  second ESX company ledger.
+- **QBCore/QBox:** `zloma_banking` remains the default society provider and
+  owns its internal job/gang organization ledger.
+
+Billing is selected independently and still uses `zloma_banking` when present.
 
 ## Project structure
 
@@ -59,11 +65,21 @@ use feature-local `init.lua` entrypoints and retain their existing API.
 ```cfg
 ensure ox_lib
 ensure oxmysql
-ensure qb-core       # or es_extended / qbx_core
+ensure qb-core       # or qbx_core
 ensure ox_inventory # selected inventory backend
 ensure ox_target    # selected target backend
 ensure zloma_core
 ensure zloma_garages  # or any other zloma script
+```
+
+For ESX, use this order instead:
+
+```cfg
+ensure es_extended
+ensure esx_addonaccount
+ensure zloma_core
+ensure zloma_banking
+ensure zloma_bossmenu
 ```
 
 Framework/inventory/target backends must start before `zloma_core`; scripts that use the core start after it. The core no longer attempts to start or restart unrelated resources automatically.

@@ -205,7 +205,12 @@ AddEventHandler('onResourceStart', function(resourceName)
     if not IsFrameworkResource(resourceName) then return end
     CreateThread(function()
         Wait(0)
-        if LoadFramework() and RestoreUsableItems then RestoreUsableItems() end
+        if LoadFramework() then
+            ZlomaCore.Cache.Society = ZlomaCore.DetectSociety()
+            print(('^2[ZLOMA CORE]^0 Framework provider refresh: Framework: %s | Society: %s')
+                :format(FrameworkType or '^1NONE DETECTED^0', ZlomaCore.Cache.Society or '^1NONE DETECTED^0'))
+            if RestoreUsableItems then RestoreUsableItems() end
+        end
     end)
 end)
 
@@ -214,13 +219,13 @@ end)
 -- caches once those providers are actually running instead of leaving the
 -- startup banner with a stale "NONE DETECTED" result.
 local function RefreshLateStartingProviders(resourceName)
-    if resourceName ~= 'zloma_banking' and resourceName ~= 'zloma_keys' then return end
+    if resourceName ~= 'zloma_banking' and resourceName ~= 'zloma_keys' and resourceName ~= 'esx_addonaccount' then return end
 
     CreateThread(function()
         -- Let the provider finish its startup and register exports first.
         Wait(0)
 
-        if resourceName == 'zloma_banking' then
+        if resourceName == 'zloma_banking' or resourceName == 'esx_addonaccount' then
             ZlomaCore.Cache.Billing = ZlomaCore.DetectBilling()
             ZlomaCore.Cache.Society = ZlomaCore.DetectSociety()
             print(('^2[ZLOMA CORE]^0 Provider detected after startup: Billing: %s | Society: %s')

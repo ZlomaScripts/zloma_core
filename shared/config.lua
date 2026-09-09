@@ -69,6 +69,8 @@ ZlomaCore.Config.Manual = {
     Dispatch = 'auto',     -- 'auto', 'ps-dispatch', 'piotreq_gpt', 'cd_dispatch', 'cd_dispatch3d', 'qs-dispatch', 'tk_dispatch', 'rcore_dispatch', 'lb-tablet', 'kartik-mdt', 'origen_police', 'none'
     Target = 'auto',       -- 'auto', 'ox_target', 'qb-target', 'qtarget'
     Fuel = 'auto',         -- 'auto', 'lc_fuel', 'qb-fuel', 'LegacyFuel', 'ox_fuel', 'lj-fuel', 'ps-fuel', 'cdn-fuel', 'Renewed-Fuel', 'okokGasStation', 'qs-fuelstations', 'rcore_fuel', 'x-fuel', 'stg-fuel', 'ti_fuel', 'esx-sna-fuel', 'ND_Fuel', 'myFuel'
+    -- Auto: ESX uses esx_addonaccount; QBCore/QBox use the normal provider
+    -- order (zloma_banking is first). Set a provider explicitly to override.
     Society = 'auto'       -- 'auto', 'zloma_banking', 'esx_addonaccount', 'qb-banking', 'okokBanking', 'wasabi_banking', 'qs-banking', 'Renewed-Banking', 'RxBanking', 'nfs-billing', 'crm-banking', 'kartik-banking', 'snipe-banking', 'tgg-banking', 'fd_banking', 'vms_bossmenu', 'xnr-bossmenu', 'nass_bossmenu', 'sd-multijob', 'p_banking'
 }
 
