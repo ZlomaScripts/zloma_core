@@ -4,7 +4,7 @@ lua54 'yes'
 
 author 'Zloma'
 description 'ZLOMA CORE - Universal framework wrapper for ESX/QBCore/QBox'
-version '1.1.3'
+version '1.1.4'
 
 dependencies {
     'ox_lib',
@@ -141,6 +141,7 @@ server_exports {
     'GetAllJobs',
     'GetAllGangs',
     'GetJobGrades',
+    'GetGangGrades',
     'GetOnlinePlayers',
     'GetPlayerGroup',
     'CreateUseableItem',

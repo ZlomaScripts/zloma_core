@@ -774,6 +774,26 @@ exports('GetJobGrades', function(jobName)
     return {}
 end)
 
+-- EXPORT: GetGangGrades(gangName) - Get grades for a specific gang.
+-- ESX has no gang definition, so it intentionally returns an empty table.
+exports('GetGangGrades', function(gangName)
+    if not gangName then return {} end
+
+    if not FrameworkType then
+        ZlomaCore.Warn("Framework", "GetGangGrades")
+        return {}
+    end
+
+    if FrameworkType == 'QBCore' or FrameworkType == 'QBox' then
+        local gangs = GetAllFrameworkGangs()
+        if gangs and gangs[gangName] then
+            return gangs[gangName].grades or {}
+        end
+    end
+
+    return {}
+end)
+
 -- EXPORT: GetOnlinePlayers() - Get all online players with basic info
 -- Returns: Table of {source, identifier, name, job}
 exports('GetOnlinePlayers', function()
