@@ -469,17 +469,29 @@ exports('GetCharacterName', function(identifier)
         -- ESX: Query users table for firstname + lastname
         local result = MySQL.single.await('SELECT firstname, lastname FROM users WHERE identifier = ?', { identifier })
         if result then
-            return result.firstname .. ' ' .. result.lastname
+            local first = result.firstname or ''
+            local last = result.lastname or ''
+            local fullName = (first .. ' ' .. last):match('^%s*(.-)%s*$')
+            if fullName and fullName ~= '' then
+                return fullName
+            end
         end
+        return identifier
     elseif FrameworkType == 'QBCore' or FrameworkType == 'QBox' then
         -- QBCore/QBox: Query players table for charinfo
         local result = MySQL.single.await('SELECT charinfo FROM players WHERE citizenid = ?', { identifier })
         if result and result.charinfo then
             local charinfo = json.decode(result.charinfo)
-            if charinfo and charinfo.firstname and charinfo.lastname then
-                return charinfo.firstname .. ' ' .. charinfo.lastname
+            if charinfo then
+                local first = charinfo.firstname or ''
+                local last = charinfo.lastname or ''
+                local fullName = (first .. ' ' .. last):match('^%s*(.-)%s*$')
+                if fullName and fullName ~= '' then
+                    return fullName
+                end
             end
         end
+        return identifier
     end
 
     return nil
@@ -1019,8 +1031,8 @@ exports('GetOfflinePlayerJob', function(identifier)
         end
     elseif FrameworkType == 'QBCore' or FrameworkType == 'QBox' then
         local result = MySQL.single.await([[
-            SELECT JSON_EXTRACT(job, '$.name') as jobName,
-                   JSON_EXTRACT(job, '$.label') as jobLabel,
+            SELECT JSON_UNQUOTE(JSON_EXTRACT(job, '$.name')) as jobName,
+                   JSON_UNQUOTE(JSON_EXTRACT(job, '$.label')) as jobLabel,
                    JSON_EXTRACT(job, '$.grade.level') as grade
             FROM players 
             WHERE citizenid = ?
