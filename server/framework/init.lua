@@ -260,7 +260,11 @@ end)
 
 -- EXPORT: GetPlayer(source) - Returns unified player object
 -- Returns: Player object or nil if not found
-exports('GetPlayer', function(source)
+exports('GetPlayer', function(source, maybeSource)
+    if type(source) == 'table' then
+        source = maybeSource
+    end
+    source = tonumber(source) or source
     if (not FrameworkType or not Framework) and not LoadFramework() then
         ZlomaCore.Warn("Framework", "GetPlayer")
         return nil
@@ -311,6 +315,7 @@ end)
 -- EXPORT: RemoveMoney(source, amount, account) - Remove money from player
 -- Returns: true if successful, false otherwise
 exports('RemoveMoney', function(source, amount, account)
+    if type(amount)~='number' or amount~=amount or amount<0 or amount==math.huge or (account~=nil and (type(account)~='string' or #account>64)) then return false end
     if not FrameworkType then
         ZlomaCore.Warn("Framework", "RemoveMoney")
         return false
@@ -323,6 +328,8 @@ exports('RemoveMoney', function(source, amount, account)
 
     if FrameworkType == 'ESX' then
         local accountName = account == 'cash' and 'money' or account
+        local accountData=player.getAccount(accountName)
+        if not accountData or (tonumber(accountData.money) or 0)<amount then return false end
         player.removeAccountMoney(accountName, amount)
         ZlomaCore.Debug(string.format("Removed $%s from %s account (Player %s)", amount, accountName, source))
         return true
@@ -341,6 +348,7 @@ end)
 -- EXPORT: AddMoney(source, amount, account) - Add money to player
 -- Returns: true if successful, false otherwise
 exports('AddMoney', function(source, amount, account)
+    if type(amount)~='number' or amount~=amount or amount<0 or amount==math.huge or (account~=nil and (type(account)~='string' or #account>64)) then return false end
     if not FrameworkType then
         ZlomaCore.Warn("Framework", "AddMoney")
         return false
@@ -437,7 +445,11 @@ end)
 
 -- EXPORT: GetIdentifier(source) - Get player identifier
 -- Returns: Identifier string or nil
-exports('GetIdentifier', function(source)
+exports('GetIdentifier', function(source, maybeSource)
+    if type(source) == 'table' then
+        source = maybeSource
+    end
+    source = tonumber(source) or source
     if not FrameworkType then
         ZlomaCore.Warn("Framework", "GetIdentifier")
         return nil
@@ -525,8 +537,18 @@ end)
 -- source: Player server ID
 -- groups: Optional table of group names to check (e.g., {'admin', 'superadmin', 'owner'})
 --         If not provided, defaults to {'admin', 'superadmin'} for ESX
+-- strictGroups: Optional true disables broad command/admin/god fallbacks when
+-- explicit groups are supplied. Existing two-argument callers retain behavior.
 -- Returns: true if admin, false otherwise
-exports('IsAdmin', function(source, groups)
+exports('IsAdmin', function(source, groups, maybeGroups, maybeStrictGroups)
+    local strictGroups = maybeGroups
+    if type(source) == 'table' then
+        source = groups
+        groups = maybeGroups
+        strictGroups = maybeStrictGroups
+    end
+    source = tonumber(source) or source
+
     if not FrameworkType then
         ZlomaCore.Warn("Framework", "IsAdmin")
         return false
@@ -556,6 +578,8 @@ exports('IsAdmin', function(source, groups)
             end
         end
 
+        if strictGroups == true then return false end
+
         -- Fallback: Native Ace Permission Check (txAdmin, server.cfg based permissions)
         if IsPlayerAceAllowed(source, 'command') then
             ZlomaCore.Debug(string.format("IsAdmin - Player %s passed via Ace permission fallback", source))
@@ -573,6 +597,8 @@ exports('IsAdmin', function(source, groups)
                 end
             end
         end
+
+        if strictGroups == true then return false end
 
         -- Fallback 1: Standard QBCore/QBox admin/god check
         if HasPermission(source, 'admin') or HasPermission(source, 'god') then
@@ -670,12 +696,37 @@ end)
 -- ============================================================================
 
 -- EXPORT: GiveVehicleKeys(source, plate) - Give vehicle keys from server side
--- Triggers the client-side key system
-exports('GiveVehicleKeys', function(source, plate)
-    if type(source) ~= 'number' or GetPlayerName(source) == nil
-        or type(plate) ~= 'string' or plate == '' or #plate > 16 then
+-- Supports both dot syntax and colon syntax: exports.zloma_core:GiveVehicleKeys(...) or exports.zloma_core.GiveVehicleKeys(...)
+exports('GiveVehicleKeys', function(source, plate, maybePlate)
+    if type(source) == 'table' then
+        source = plate
+        plate = maybePlate
+    end
+
+    source = tonumber(source)
+    if type(plate) == 'string' then
+        plate = plate:gsub('^%s*(.-)%s*$', '%1'):upper()
+    elseif plate ~= nil then
+        plate = tostring(plate):gsub('^%s*(.-)%s*$', '%1'):upper()
+    end
+
+    if not source or GetPlayerName(source) == nil or type(plate) ~= 'string' or plate == '' or #plate > 16 then
         print('[zloma_core] GiveVehicleKeys requires source and plate')
         return false
+    end
+
+    -- Direct authoritative server-side key grant if zloma_keys is running
+    if GetResourceState('zloma_keys') == 'started' then
+        pcall(function()
+            if exports['zloma_keys'] then
+                if exports['zloma_keys'].GiveKeyToPlayer then
+                    exports['zloma_keys']:GiveKeyToPlayer(source, plate)
+                end
+                if exports['zloma_keys'].AuthorizeKeyRequest then
+                    exports['zloma_keys']:AuthorizeKeyRequest(source, plate)
+                end
+            end
+        end)
     end
 
     TriggerClientEvent('zloma_core:client:giveKeys', source, plate)
@@ -683,11 +734,30 @@ exports('GiveVehicleKeys', function(source, plate)
 end)
 
 -- EXPORT: RemoveVehicleKeys(source, plate) - Remove vehicle keys from server side
-exports('RemoveVehicleKeys', function(source, plate)
-    if type(source) ~= 'number' or GetPlayerName(source) == nil
-        or type(plate) ~= 'string' or plate == '' or #plate > 16 then
+exports('RemoveVehicleKeys', function(source, plate, maybePlate)
+    if type(source) == 'table' then
+        source = plate
+        plate = maybePlate
+    end
+
+    source = tonumber(source)
+    if type(plate) == 'string' then
+        plate = plate:gsub('^%s*(.-)%s*$', '%1'):upper()
+    elseif plate ~= nil then
+        plate = tostring(plate):gsub('^%s*(.-)%s*$', '%1'):upper()
+    end
+
+    if not source or GetPlayerName(source) == nil or type(plate) ~= 'string' or plate == '' or #plate > 16 then
         print('[zloma_core] RemoveVehicleKeys requires source and plate')
         return false
+    end
+
+    if GetResourceState('zloma_keys') == 'started' then
+        pcall(function()
+            if exports['zloma_keys'] and exports['zloma_keys'].RemoveKeyFromPlayer then
+                exports['zloma_keys']:RemoveKeyFromPlayer(source, plate)
+            end
+        end)
     end
 
     TriggerClientEvent('zloma_core:client:removeKeys', source, plate)
@@ -1152,6 +1222,7 @@ exports('GetSocietyMoney', function(jobName)
 
         elseif SocietyType == 'esx_addonaccount' then
             local account = exports['esx_addonaccount']:GetSharedAccount(('society_%s'):format(jobName))
+            if account and type(account.refresh)=='function' then account.refresh() end
             return account and account.money or 0
         
         elseif SocietyType == 'qb-banking' then
@@ -1232,7 +1303,7 @@ end)
 -- jobName: The job/org identifier
 -- amount: Amount to add
 -- Returns: true if successful, false otherwise
-exports('AddSocietyMoney', function(jobName, amount)
+local function AddSocietyMoney(jobName, amount)
     if type(jobName) ~= 'string' or jobName == '' or #jobName > 64
         or type(amount) ~= 'number' or amount ~= amount or amount <= 0 or amount == math.huge then
         return false
@@ -1251,8 +1322,7 @@ exports('AddSocietyMoney', function(jobName, amount)
         elseif SocietyType == 'esx_addonaccount' then
             local account = exports['esx_addonaccount']:GetSharedAccount(('society_%s'):format(jobName))
             if account then
-                account.addMoney(amount)
-                return true
+                return account.addMoney(amount) ~= false
             end
             return false
         
@@ -1331,13 +1401,13 @@ exports('AddSocietyMoney', function(jobName, amount)
         ZlomaCore.Debug(string.format("AddSocietyMoney failed for %s: %s", jobName, tostring(result)))
         return false
     end
-end)
+end
 
 -- EXPORT: RemoveSocietyMoney(jobName, amount) - Remove money from society account
 -- jobName: The job/org identifier
 -- amount: Amount to remove
 -- Returns: true if successful, false otherwise
-exports('RemoveSocietyMoney', function(jobName, amount)
+local function RemoveSocietyMoney(jobName, amount)
     if type(jobName) ~= 'string' or jobName == '' or #jobName > 64
         or type(amount) ~= 'number' or amount ~= amount or amount <= 0 or amount == math.huge then
         return false
@@ -1356,8 +1426,9 @@ exports('RemoveSocietyMoney', function(jobName, amount)
         elseif SocietyType == 'esx_addonaccount' then
             local account = exports['esx_addonaccount']:GetSharedAccount(('society_%s'):format(jobName))
             if account then
-                account.removeMoney(amount)
-                return true
+                if type(account.refresh)=='function' then account.refresh() end
+                if (tonumber(account.money) or 0)<amount then return false end
+                return account.removeMoney(amount) ~= false
             end
             return false
         
@@ -1435,7 +1506,19 @@ exports('RemoveSocietyMoney', function(jobName, amount)
         ZlomaCore.Debug(string.format("RemoveSocietyMoney failed for %s: %s", jobName, tostring(result)))
         return false
     end
-end)
+end
+
+local societyMutationLocks={}
+local function societyMutation(fn,job,amount)
+    if type(job)~='string' or societyMutationLocks[job] then return false end
+    societyMutationLocks[job]=true
+    local ok,result=xpcall(function() return fn(job,amount) end,debug.traceback)
+    societyMutationLocks[job]=nil
+    if not ok then print('[zloma_core] [ERROR] Society mutation failed: '..tostring(result)); return false end
+    return result
+end
+exports('AddSocietyMoney',function(job,amount) return societyMutation(AddSocietyMoney,job,amount) end)
+exports('RemoveSocietyMoney',function(job,amount) return societyMutation(RemoveSocietyMoney,job,amount) end)
 
 -- EXPORT: GetSocietySystem() - Get detected society/banking system name
 -- Returns: string or nil

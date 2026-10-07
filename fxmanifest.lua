@@ -4,7 +4,7 @@ lua54 'yes'
 
 author 'Zloma'
 description 'ZLOMA CORE - Universal framework wrapper for ESX/QBCore/QBox'
-version '1.1.4'
+version '1.1.5'
 
 dependencies {
     'ox_lib',
@@ -23,6 +23,9 @@ shared_scripts {
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
     'server/version.lua',
+    'server/vehicle_catalogue.lua',
+    'server/vehicle_policy.lua',
+    'server/vehicle_authority.lua',
     -- Dispatch loads shared helpers, individual providers, then its public API.
     'server/dispatch/shared.lua',
     'server/dispatch/ps-dispatch.lua',
@@ -36,6 +39,7 @@ server_scripts {
     'server/dispatch/origen_police.lua',
     'server/dispatch/init.lua',
     'server/framework/init.lua',
+    'server/durable_money.lua',
     'server/inventory/init.lua',
     'server/billing/registry.lua',
     'server/billing/providers/*.lua',

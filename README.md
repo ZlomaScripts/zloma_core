@@ -291,3 +291,7 @@ ZLOMA CORE is the foundation for all Zloma scripts:
 This project is **source-available** — you can use and modify it for your server, but redistribution and reselling are prohibited. See the [LICENSE](LICENSE) file for details.
 
 **Made by Zloma**
+
+## Public server valet / external binding contract
+
+See [PublicValetContract.md](docs/PublicValetContract.md) for the callable server retrieval API, cancellation/result/handoff exports, explicit trusted caller configuration and admin/market creation provenance policy.

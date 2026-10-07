@@ -670,7 +670,21 @@ end)
 
 -- EXPORT: AddItem(source, item, count, metadata) - Add item to player inventory
 -- Returns: true if successful, false otherwise
-exports('AddItem', function(source, item, count, metadata)
+exports('AddItem', function(source, item, count, metadata, slot, maybeSlot)
+    if type(source) == 'table' then
+        source = item
+        item = count
+        count = metadata
+        metadata = slot
+        slot = maybeSlot
+    end
+    source = tonumber(source) or source
+
+    if not source or (type(source) == 'string' and tonumber(source) == nil) then
+        print(string.format('^1[zloma_core] ERROR: AddItem called with invalid source "%s" (caller likely used dot instead of colon: use exports["zloma_core"]:AddItem)^0', tostring(source)))
+        return false
+    end
+
     if not GetActiveInventoryType() then
         ZlomaCore.Warn("Inventory", "AddItem")
         return false
@@ -682,7 +696,11 @@ exports('AddItem', function(source, item, count, metadata)
     local success = false
 
     if InventoryType == 'ox_inventory' then
-        success = exports.ox_inventory:AddItem(source, item, count, metadata)
+        local oxSuccess, oxResponse = exports.ox_inventory:AddItem(source, item, count, metadata, slot)
+        success = (oxSuccess == true or type(oxSuccess) == 'table')
+        if not success then
+            ZlomaCore.Debug(string.format("ox_inventory AddItem failed for player %s, item %s, count %s: %s", tostring(source), tostring(item), tostring(count), tostring(oxResponse)))
+        end
     elseif InventoryType == 'qb-inventory' then
         local Player = exports['zloma_core']:GetPlayer(source)
         if not Player then return false end
@@ -742,7 +760,21 @@ end)
 
 -- EXPORT: RemoveItem(source, item, count, metadata, slot) - Remove item from player inventory
 -- Returns: true if successful, false otherwise
-exports('RemoveItem', function(source, item, count, metadata, slot)
+exports('RemoveItem', function(source, item, count, metadata, slot, maybeSlot)
+    if type(source) == 'table' then
+        source = item
+        item = count
+        count = metadata
+        metadata = slot
+        slot = maybeSlot
+    end
+    source = tonumber(source) or source
+
+    if not source or (type(source) == 'string' and tonumber(source) == nil) then
+        print(string.format('^1[zloma_core] ERROR: RemoveItem called with invalid source "%s" (caller likely used dot instead of colon: use exports["zloma_core"]:RemoveItem)^0', tostring(source)))
+        return false
+    end
+
     if not GetActiveInventoryType() then
         ZlomaCore.Warn("Inventory", "RemoveItem")
         return false
@@ -752,7 +784,11 @@ exports('RemoveItem', function(source, item, count, metadata, slot)
     local success = false
 
     if InventoryType == 'ox_inventory' then
-        success = exports.ox_inventory:RemoveItem(source, item, count, metadata, slot)
+        local oxSuccess, oxResponse = exports.ox_inventory:RemoveItem(source, item, count, metadata, slot)
+        success = oxSuccess == true
+        if not success then
+            ZlomaCore.Debug(string.format("ox_inventory RemoveItem failed for player %s, item %s, count %s: %s", tostring(source), tostring(item), tostring(count), tostring(oxResponse)))
+        end
     elseif InventoryType == 'qb-inventory' then
         local Player = exports['zloma_core']:GetPlayer(source)
         if not Player then return false end
@@ -823,7 +859,17 @@ end)
 
 -- EXPORT: GetInventory(source) - Get player's full inventory
 -- Returns: Table of items (normalized structure where possible)
-exports('GetInventory', function(source)
+exports('GetInventory', function(source, maybeSource)
+    if type(source) == 'table' then
+        source = maybeSource
+    end
+    source = tonumber(source) or source
+
+    if not source or (type(source) == 'string' and tonumber(source) == nil) then
+        print(string.format('^1[zloma_core] ERROR: GetInventory called with invalid source "%s" (caller likely used dot instead of colon: use exports["zloma_core"]:GetInventory)^0', tostring(source)))
+        return {}
+    end
+
     if not GetActiveInventoryType() then
         ZlomaCore.Warn("Inventory", "GetInventory")
         return {}

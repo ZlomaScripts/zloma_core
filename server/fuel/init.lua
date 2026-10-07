@@ -1,5 +1,24 @@
 -- Server fuel facade. Provider implementations are loaded from providers/.
 local activeFuelSystem = nil
+local authorityReaders = {}
+
+-- A provider must keep fuel in its server-owned ledger, not read owner-authored state bags.
+-- Registration is a trusted server integration contract, never a network request.
+exports('RegisterFuelAuthority', function(provider, reader)
+    if type(provider) ~= 'string' or type(reader) ~= 'function' then return false end
+    authorityReaders[provider] = {reader=reader,resource=GetInvokingResource()}
+    return true
+end)
+exports('ReadAuthoritativeVehicleFuel', function(entity)
+    local provider = ZlomaCore.DetectFuel()
+    local contract = authorityReaders[provider]
+    if not contract then return nil, 'fuel_authority_integration_required:'..tostring(provider) end
+    local ok, value = pcall(contract.reader, entity)
+    if not ok or type(value) ~= 'number' or value ~= value or value < 0 or value > 100 then
+        return nil, 'invalid_authoritative_fuel_read'
+    end
+    return value
+end)
 
 local function refreshFuelDetection()
     activeFuelSystem = ZlomaCore.DetectFuel()
@@ -59,5 +78,8 @@ AddEventHandler('onResourceStart', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then refreshFuelDetection() end
 end)
 AddEventHandler('onResourceStop', function(resourceName)
+    for provider, contract in pairs(authorityReaders) do
+        if contract.resource == resourceName then authorityReaders[provider] = nil end
+    end
     if resourceName ~= GetCurrentResourceName() then refreshFuelDetection() end
 end)

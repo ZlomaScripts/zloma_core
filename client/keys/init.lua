@@ -195,7 +195,9 @@ exports('GiveKeys', function(plate, vehicleEntity)
             if NetworkGetEntityIsNetworked(vehicle) then
                 exports['mk_vehiclekeys']:AddKey(vehicle)
             else
-                Entity(vehicle).state:set('Keys', {LocalPlayer.state.mk_identifier}, true)
+                -- Local-only preview entities are not authoritative gameplay
+                -- vehicles and must not replicate client-authored key state.
+                Entity(vehicle).state:set('Keys', {LocalPlayer.state.mk_identifier}, false)
             end
         end
         success = true
@@ -358,7 +360,7 @@ exports('RemoveKeys', function(plate)
             if NetworkGetEntityIsNetworked(vehicle) then
                 exports['mk_vehiclekeys']:RemoveKey(vehicle)
             else
-                Entity(vehicle).state:set('Keys', {}, true)
+                Entity(vehicle).state:set('Keys', {}, false)
             end
         end
         success = true
