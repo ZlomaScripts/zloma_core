@@ -378,7 +378,9 @@ end)
 
 -- EXPORT: GetPlayerJob(source) - Get player job information
 -- Returns: {name = string, grade = number, label = string} or nil
-exports('GetPlayerJob', function(source)
+exports('GetPlayerJob', function(source, maybeSource)
+    if type(source) == 'table' then source = maybeSource end
+    source = tonumber(source) or source
     if not FrameworkType then
         ZlomaCore.Warn("Framework", "GetPlayerJob")
         return nil
@@ -415,7 +417,9 @@ end)
 
 -- EXPORT: GetPlayerGang(source) - Get player gang information (QBCore/QBox only)
 -- Returns: {name = string, grade = number, label = string} or nil
-exports('GetPlayerGang', function(source)
+exports('GetPlayerGang', function(source, maybeSource)
+    if type(source) == 'table' then source = maybeSource end
+    source = tonumber(source) or source
     if not FrameworkType then
         ZlomaCore.Warn("Framework", "GetPlayerGang")
         return nil

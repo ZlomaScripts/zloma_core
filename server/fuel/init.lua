@@ -5,7 +5,11 @@ local authorityReaders = {}
 -- A provider must keep fuel in its server-owned ledger, not read owner-authored state bags.
 -- Registration is a trusted server integration contract, never a network request.
 exports('RegisterFuelAuthority', function(provider, reader)
-    if type(provider) ~= 'string' or type(reader) ~= 'function' then return false end
+    local mt = type(reader) == 'table' and getmetatable(reader)
+    local callable = type(reader) == 'function' or (type(reader) == 'table'
+        and type(rawget(reader, '__cfx_functionReference')) == 'string'
+        and type(mt) == 'table' and type(mt.__call) == 'function')
+    if type(provider) ~= 'string' or not callable or not GetInvokingResource() then return false end
     authorityReaders[provider] = {reader=reader,resource=GetInvokingResource()}
     return true
 end)

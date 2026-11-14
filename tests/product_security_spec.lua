@@ -54,6 +54,9 @@ MySQL={single={await=function() return clone(row) end},update={await=function(_,
     if updateResult~=1 then return updateResult end
     row.vehicle=values[1]; persistence=persistence+1;return 1
 end}}
+function IsDuplicityVersion() return true end
+Config.RequireJobDuty=false;Config.UseStaffDuty=false
+loadProduct('zloma_tuning','shared/access.lua')
 loadProduct('zloma_tuning','server/authority.lua')
 loadProduct('zloma_tuning','server/server.lua')
 local begin=callbacks['zloma_tuning:beginSession']
@@ -69,6 +72,8 @@ check(not save(1,s.token,{modEngine=math.huge},{}).saved,'infinity rejected')
 check(not save(1,s.token,{modEngine=999},{}).saved,'extreme index rejected')
 check(not save(1,s.token,{modEngine=4},{}).saved,'forbidden model-specific mod rejected')
 check(not save(1,s.token,{extras={['2']=0}},{}).saved,'non-existent model extra rejected')
+check(not save(1,s.token,{modSpoilers=0},{}).saved,'absent model mod slot rejected even when count is zero')
+check(not save(1,s.token,{wheels=2},{}).saved,'unknown model wheel catalogue rejected')
 check(not save(1,s.token,{livery=2},{}).saved,'out-of-range model livery rejected')
 balance=0;check(not save(1,s.token,{modEngine=2},{}).saved and persistence==0,'failed payment cannot persist')
 balance=1000000
@@ -131,6 +136,8 @@ check(callbacks['zloma_bossmenu:withdraw'](1,tooDeep)==false,'deep payload rejec
 -- Shop test drive uses actual shop model membership and server return position.
 ShopCache={[1]={coords={x=0,y=0,z=0},testdrive_coords={x=10,y=0,z=0},shop_open=true,vehicles={{spawn_name='adder',enabled=1,vehicle_type='car'}},label='Shop'}}
 ActiveTestDrives={};ShopOrders={};Config.TestDrive={duration=15};Config.Business={towTruckModel='flatbed3'}
+function SetRoutingBucketPopulationEnabled() end
+function SetRoutingBucketEntityLockdownMode() end
 function SetPlayerRoutingBucket(_,value) bucket=value end
 function LogDebug() end
 loadProduct('zloma_vehicleshop','server/security.lua')

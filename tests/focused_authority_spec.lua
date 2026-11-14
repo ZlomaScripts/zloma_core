@@ -1,4 +1,5 @@
 local count = 0
+function L(key) return key end
 local function check(v, label) assert(v, label); count = count + 1 end
 local callbacks, events, exported, threads = {}, {}, {}, {}
 local codes, serial = {}, 0
@@ -97,6 +98,7 @@ MySQL.update.await=function(q,v)
  if sqlResult~=1 then return 0 end
  row.vehicle=v[1];row.stored=1;return 1
 end
+assert(load(read_source('zloma_garages','shared/vehicle_properties.lua')))()
 assert(load(read_source('zloma_garages','server/vehicle/store_authority.lua')))()
 GarageStoreAuthority.register('store','store',function(src,data)
  handlerCalls=handlerCalls+1

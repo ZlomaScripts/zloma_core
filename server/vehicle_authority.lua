@@ -17,6 +17,28 @@ local function actual(entry)
         and GetEntityRoutingBucket(entry.entity)==entry.bucket
         and modelHash(GetEntityModel(entry.entity))==entry.model
 end
+-- Standard server convars are private and survive resource restarts only.
+-- Restore only our captured exact bindings; never infer authority from a bag/plate.
+local snapshotKey='zloma_core:privateVehicleBindings'
+local function restoreBindings()
+    if type(GetConvar)~='function' or type(SetConvar)~='function' then return end
+    local raw=GetConvar(snapshotKey,'')
+    SetConvar(snapshotKey,'') -- one-shot; a full FXServer restart has no snapshot
+    if raw=='' then return end
+    local ok,snapshot=pcall(json.decode,raw)
+    if not ok or type(snapshot)~='table' then return end
+    for _,entry in ipairs(snapshot) do
+        if type(entry)=='table' and type(entry.entity)=='number' and type(entry.netId)=='number'
+            and type(entry.model)=='number' and type(entry.bucket)=='number'
+            and clean(entry.plate) and clean(entry.entityPlate) and type(entry.resource)=='string'
+            and type(entry.generation)=='string' and type(entry.revision)=='number' and actual(entry)
+            and not byEntity[entry.entity] and (entry.transient or not byPlate[entry.plate]) then
+            byEntity[entry.entity]=entry
+            if not entry.transient then byPlate[entry.plate]=entry end
+        end
+    end
+end
+restoreBindings()
 -- Product callers retain their private reservation/hybrid compatibility paths.
 local products={zloma_garages=true,zloma_simplegarages=true,zloma_vehicleshop=true}
 local created={}
@@ -95,7 +117,13 @@ end)
 -- They read current DB/access rules; a bag or physical plate never creates a binding.
 exports('RegisterVehicleContextResolver',function(resolver)
     local caller=GetInvokingResource()
-    if not products[caller] or type(resolver)~='function' then return false end
+    -- FiveM deserializes cross-resource function references into callable tables.
+    -- Accept that runtime representation only from the existing trusted products.
+    local mt=type(resolver)=='table' and getmetatable(resolver)
+    local callable=type(resolver)=='function' or (type(resolver)=='table'
+        and type(rawget(resolver,'__cfx_functionReference'))=='string'
+        and type(mt)=='table' and type(mt.__call)=='function')
+    if not products[caller] or not callable then return false end
     resolvers[caller]=resolver;return true
 end)
 local function verified(src,netId,purpose)
@@ -106,11 +134,11 @@ local function verified(src,netId,purpose)
     local Core=exports.zloma_core
     local identifier=Core:GetIdentifier(src)
     if not identifier or GetPlayerRoutingBucket(src)~=entry.bucket then return nil,'actor_or_bucket_mismatch' end
-    local data
+    local data, accessReason
     local resolver=resolvers[entry.resource]
     if not resolver and not entry.transient then resolver=resolvers.zloma_garages or resolvers.zloma_simplegarages end
     if resolver then
-        data=resolver(src,entry.plate,purpose,entry.descriptor)
+        data,accessReason=resolver(src,entry.plate,purpose,entry.descriptor)
     elseif entry.descriptor and entry.descriptor.transient then
         local d=entry.descriptor
         if d.identifier==identifier and (not d.expires or GetGameTimer()<=d.expires) then
@@ -132,8 +160,13 @@ local function verified(src,netId,purpose)
     end
     -- DB reads may yield: re-check the captured generation and entity afterwards.
     if data and data.model and modelHash(data.model)~=entry.model then return nil,'canonical_model_changed' end
-    if not data or not data.identity or not data.access or byEntity[entity]~=entry or not actual(entry)
-        or Core:GetIdentifier(src)~=identifier or GetPlayerRoutingBucket(src)~=entry.bucket then return nil,'access_or_lifecycle_changed' end
+    if not data or not data.identity or not data.access then
+        return nil,type(accessReason)=='string' and accessReason or 'access_not_confirmed'
+    end
+    if byEntity[entity]~=entry then return nil,'binding_generation_changed' end
+    if not actual(entry) then return nil,'entity_identity_changed' end
+    if Core:GetIdentifier(src)~=identifier then return nil,'actor_identity_changed' end
+    if GetPlayerRoutingBucket(src)~=entry.bucket then return nil,'actor_bucket_changed' end
     if entry.dbIdentity and entry.dbIdentity~=data.identity then return nil,'db_identity_changed' end
     entry.dbIdentity=data.identity
     if entry.version~=data.version then entry.version=data.version;entry.revision=entry.revision+1 end
@@ -179,4 +212,11 @@ AddEventHandler('entityRemoved',function(entity)
     byEntity[entity]=nil
     if byPlate[entry.plate]==entry then byPlate[entry.plate]=nil end
 end)
-AddEventHandler('onResourceStop',function(resource) resolvers[resource]=nil end)
+AddEventHandler('onResourceStop',function(resource)
+    resolvers[resource]=nil
+    if resource~=GetCurrentResourceName() or type(SetConvar)~='function' then return end
+    local snapshot={}
+    for _,entry in pairs(byEntity) do if actual(entry) then snapshot[#snapshot+1]=entry end end
+    local ok,raw=pcall(json.encode,snapshot)
+    if ok then SetConvar(snapshotKey,raw) end
+end)

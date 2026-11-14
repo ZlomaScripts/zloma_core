@@ -66,6 +66,7 @@ end}
 local function loadProduct(p,f) assert(load(read_source(p,f),p..'/'..f))() end
 loadProduct('zloma_core','server/vehicle_authority.lua')
 resource='zloma_garages'
+loadProduct('zloma_garages','shared/vehicle_properties.lua')
 loadProduct('zloma_garages','server/vehicle/context.lua')
 FakePlates={GenerateRandomPlate=function() return 'FAKE123' end,GetStateBagKey=function() return 'fakePlate:original' end}
 FakePlateInventory={OnApply=function() synced=synced+1 end,OnRemove=function() synced=synced+1 end}

@@ -1,4 +1,5 @@
 
+function L(key) return key end -- Locale lookup is supplied by the resource at runtime.
 local count=0
 local function check(v,label) assert(v,label);count=count+1 end
 local resource,caller,api,events,threads,entities,row,online,identifier,bucket,engineHook,engineFailure,serial,values,createdCount
@@ -69,7 +70,8 @@ local function reset()
  ZlomaVehiclePolicy={BindingCallers={['zloma_vehManagement']=true,['zloma_autopijaca']=true}}
  loadProduct('zloma_core','server/vehicle_authority.lua')
  resource=product
- loadProduct(product,'server/vehicle/context.lua')
+ loadProduct('zloma_garages','shared/vehicle_properties.lua')
+loadProduct(product,'server/vehicle/context.lua')
  ZlomaServerSpawn={Spawn=function(opts)
    if engineHook then engineHook(opts) end
    if engineFailure then return nil,engineFailure end
