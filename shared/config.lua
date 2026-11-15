@@ -74,8 +74,10 @@ ZlomaCore.Config.Manual = {
     Society = 'auto'       -- 'auto', 'zloma_banking', 'esx_addonaccount', 'qb-banking', 'okokBanking', 'wasabi_banking', 'qs-banking', 'Renewed-Banking', 'RxBanking', 'nfs-billing', 'crm-banking', 'kartik-banking', 'snipe-banking', 'tgg-banking', 'fd_banking', 'vms_bossmenu', 'xnr-bossmenu', 'nass_bossmenu', 'sd-multijob', 'p_banking'
 }
 
--- ps-dispatch validates codeName against its Config.Dispatch entries. Add this
--- key there (or change this value to an existing entry) when using ps-dispatch.
+-- ps-dispatch v2 validates codeName against its Config.Dispatch entries. Add this
+-- key there (or change this value to an existing entry) when using ps-dispatch v2.
+-- The legacy ps-dispatch v1 (dispatch:server:notify) is detected automatically
+-- and needs no entry.
 ZlomaCore.Config.Dispatch = {
     PsCodeName = 'customAlert'
 }
